@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Permettre l'accès CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
@@ -16,86 +15,63 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ 
-            error: "La clé GEMINI_API_KEY est manquante dans Vercel. Allez dans Settings > Environment Variables, ajoutez GEMINI_API_KEY et cliquez sur Redeploy." 
+        return res.status(400).json({ 
+            error: "La variable d'environnement GEMINI_API_KEY est introuvable sur Vercel. Veuillez l'ajouter dans vos paramètres Vercel puis faire un Redeploy." 
         });
     }
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-    const systemPrompt = `Tu es un expert en pronostics sportifs. Recherche sur le Web les matchs réels de Football prévus AUJOURD'HUI (${dateStr}) avec un coup d'envoi APRÈS ${timeStr}.
-Examine les statistiques H2H et la forme récente des deux équipes.
-Tu dois répondre UNIQUEMENT avec un tableau JSON valide. Aucun texte avant, aucun texte après, aucune balise markdown.
-
-Exemple de format attendu :
+    const systemPrompt = `Tu es un expert en pronostics sportifs doté d'une connexion internet en direct. Analyse les matchs de football prévus aujourd'hui (${dateStr}).
+Fournis une liste de 3 à 4 pronostics réels du jour sous la forme STRICTE d'un tableau JSON pur (sans texte additionnel, sans markdown autour si possible, ou uniquement dans un bloc json) avec les champs suivants :
 [
   {
-    "type": "GOALS",
-    "league": "Match du Jour",
+    "type": "GOALS" ou "WINNER",
+    "league": "Nom de la compétition",
     "match": "Équipe A vs Équipe B",
-    "time": "21:00",
-    "selection": "Plus de 2.5 Buts",
+    "time": "Heure du match",
+    "selection": "Pari conseillé",
     "odds": 1.75,
     "confidence": "85%",
-    "tip": "Analyse H2H et dynamique récente des deux équipes."
+    "tip": "Analyse courte et précise basée sur la forme récente."
   }
 ]`;
 
-    const userQuery = `Trouve 3 à 5 matchs réels de football d'aujourd'hui (${dateStr}) joués après ${timeStr}. Format JSON pur uniquement.`;
-
     try {
-        // Liste des modèles à essayer par ordre de priorité
-        const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-        let rawText = null;
-        let lastError = null;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: "Donne-moi les pronostics réels du jour au format JSON." }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            })
+        });
 
-        for (const model of models) {
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: userQuery }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] }
-                    })
-                });
+        const data = await response.json();
 
-                if (response.ok) {
-                    const data = await response.json();
-                    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (rawText) break;
-                } else {
-                    const errPayload = await response.text();
-                    console.error(`Erreur modèle ${model}:`, errPayload);
-                    lastError = errPayload;
-                }
-            } catch (err) {
-                console.error(`Exception modèle ${model}:`, err);
-                lastError = err.message;
-            }
-        }
-
-        if (!rawText) {
-            return res.status(500).json({ 
-                error: "L'API Google Gemini n'a pas pu répondre. Vérifiez la clé API.", 
-                details: lastError 
+        if (!response.ok) {
+            return res.status(response.status).json({ 
+                error: data.error?.message || "Erreur renvoyée par l'API Google Gemini." 
             });
         }
 
-        // Nettoyage et extraction du JSON dans la réponse
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) {
+            return res.status(500).json({ error: "L'IA Gemini a renvoyé une réponse vide." });
+        }
+
+        // Extraction propre du JSON depuis la réponse de Gemini
         const jsonMatch = rawText.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
-            return res.status(500).json({ error: "L'IA a répondu mais le format JSON n'a pas pu être extrait.", raw: rawText });
+            return res.status(500).json({ error: "Impossible de formater la réponse de Gemini en JSON." });
         }
 
         const parsed = JSON.parse(jsonMatch[0]);
         return res.status(200).json(parsed);
 
     } catch (error) {
-        console.error("Serverless Handler Error:", error);
-        return res.status(500).json({ error: "Erreur serveur.", message: error.message });
+        return res.status(500).json({ error: "Erreur serveur interne : " + error.message });
     }
 }
