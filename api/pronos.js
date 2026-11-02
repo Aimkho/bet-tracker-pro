@@ -46,7 +46,8 @@ Exemple de réponse attendue :
     const userQuery = `Trouve 3 à 5 matchs réels d'aujourd'hui (${dateStr}) joués après ${timeStr}. Analyse H2H et cotes. Format JSON pur uniquement.`;
 
     try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        // Utilisation du nom de modèle Gemini stable et officiel
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -61,13 +62,34 @@ Exemple de réponse attendue :
         if (!response.ok) {
             const errText = await response.text();
             console.error("Gemini API Error:", errText);
-            return res.status(response.status).json({ error: "Erreur API Gemini", details: errText });
+            
+            // Tentative alternative sans l'outil google_search si quota/accès limité
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const fallbackResp = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                })
+            });
+
+            if (!fallbackResp.ok) {
+                return res.status(response.status).json({ error: "Erreur API Gemini", details: errText });
+            }
+
+            const fallbackResult = await fallbackResp.json();
+            const rawFallbackText = fallbackResult.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const jsonMatchFb = rawFallbackText.match(/\[[\s\S]*\]/);
+            if (jsonMatchFb) {
+                return res.status(200).json(JSON.parse(jsonMatchFb[0]));
+            }
         }
 
         const result = await response.json();
         const rawJsonText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-        // Nettoyage intelligent au cas où du markdown est présent
+        // Nettoyage intelligent du JSON
         const jsonMatch = rawJsonText.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
             return res.status(500).json({ error: "Format de réponse invalide reçu de Gemini.", raw: rawJsonText });
