@@ -1,193 +1,304 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+import { GoogleGenAI } from '@google/genai';
 
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+
+  // Autoriser uniquement les méthodes utilisées par l'application.
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
+    return res.status(204).end();
   }
 
   if (req.method !== 'GET' && req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée.' });
-  }
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
 
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({
-      error: "La variable d'environnement GEMINI_API_KEY est introuvable sur Vercel. Ajoute-la dans Settings > Environment Variables, puis fais un Redeploy."
+    return res.status(405).json({
+      error: 'Méthode non autorisée. Utilise GET ou POST.'
     });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return res.status(500).json({
+      error:
+        "La variable GEMINI_API_KEY n'est pas configurée. Ajoute-la dans l'environnement utilisé, puis redémarre le serveur local ou redéploie le projet."
+    });
+  }
+
+  const model =
+    process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+
   const now = new Date();
+
   const dateStr = now.toLocaleDateString('fr-FR', {
+    timeZone: 'Europe/Paris',
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 
-  const systemPrompt = `Tu es un assistant spécialisé en analyse de matchs de football.
-Utilise les informations de recherche Google disponibles pour identifier des matchs réels prévus aujourd'hui : ${dateStr}.
+  const timeStr = now.toLocaleTimeString('fr-FR', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
 
-Règles importantes :
-- Ne invente pas de match.
-- Si tu ne trouves pas assez d'informations fiables, renvoie moins de pronostics.
-- Analyse uniquement le football.
-- Donne entre 1 et 4 pronostics.
-- Les cotes doivent être réalistes et exprimées en format décimal, par exemple 1.85.
-- Le champ confidence doit être une chaîne comme "70%".
-- Réponds uniquement avec un tableau JSON valide, sans texte avant ou après.
+  const prompt = `
+Tu es un assistant d'analyse de football.
 
-Format attendu :
+Date actuelle : ${dateStr}.
+Heure actuelle : ${timeStr}.
+Fuseau horaire de référence : Europe/Paris.
+
+MISSION :
+Utilise Google Search pour rechercher et vérifier les matchs
+de football prévus aujourd'hui et qui n'ont pas encore commencé.
+
+RÈGLES :
+1. Vérifie la date, la compétition et l'horaire de chaque rencontre.
+2. Ne propose aucun match d'une autre date.
+3. Ne propose aucun match déjà commencé, terminé, annulé ou reporté.
+4. Fournis au maximum 3 matchs.
+5. Tu peux fournir moins de 3 matchs.
+6. Si aucun match ne peut être confirmé, renvoie [].
+7. Ne fabrique aucune rencontre, statistique, blessure ou composition.
+8. Ne fabrique aucune cote.
+9. Utilise null pour odds si aucune cote actuelle n'est vérifiée.
+10. Utilise toujours "Non évaluée" pour confidence.
+11. Dans tip, distingue les informations vérifiées des hypothèses.
+12. Si tu indiques une cote, mentionne son fournisseur et les limites
+    de sa fraîcheur dans tip.
+13. Les sélections sont des pistes d'analyse et non des gains garantis.
+14. Réponds uniquement avec un tableau JSON valide.
+15. N'ajoute aucun texte ni bloc Markdown autour du JSON.
+
+STRUCTURE ATTENDUE :
 [
   {
-    "type": "GOALS" ou "WINNER",
     "league": "Nom de la compétition",
-    "match": "Équipe A vs Équipe B",
-    "time": "Heure du match",
-    "selection": "Pari conseillé",
-    "odds": 1.85,
-    "confidence": "70%",
-    "tip": "Analyse courte basée sur la forme récente, les absences et l'enjeu du match."
+    "match": "Équipe domicile vs Équipe extérieure",
+    "time": "HH:MM (heure de Paris)",
+    "tip": "Analyse courte en français avec les limites des informations.",
+    "selection": "Sélection proposée",
+    "odds": null,
+    "confidence": "Non évaluée"
   }
-]`;
+]
+`;
 
   try {
-    const model = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+    const ai = new GoogleGenAI({ apiKey });
 
-const apiUrl =
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey.trim()
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `Recherche les matchs de football importants prévus aujourd'hui, le ${dateStr}. Donne-moi 1 à 4 pronostics réels au format JSON strict.`
-              }
-            ]
-          }
-        ],
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
         tools: [
           {
-            google_search: {}
+            googleSearch: {}
           }
         ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 2048
-        }
-      })
+        maxOutputTokens: 8192
+      }
     });
 
-    const data = await response.json();
+    const candidate = response.candidates?.[0];
+    const grounding = candidate?.groundingMetadata;
 
-    if (!response.ok) {
-      const apiMessage =
-        data?.error?.message ||
-        `Erreur Gemini HTTP ${response.status}`;
+    // Diagnostic dans le terminal local ou les journaux Vercel.
+    // Cet horodatage n'est pas la date de mise à jour des données.
+    console.log(
+      '[pronos] Recherche Google',
+      JSON.stringify({
+        model,
+        responseReceivedAt: new Date().toISOString(),
+        finishReason: candidate?.finishReason || null,
+        queries: grounding?.webSearchQueries || [],
+        sources: (grounding?.groundingChunks || [])
+          .filter(chunk => chunk.web)
+          .map(chunk => ({
+            title: chunk.web.title,
+            url: chunk.web.uri
+          }))
+      })
+    );
 
-      return res.status(response.status).json({
-        error: apiMessage
+    if (candidate?.finishReason === 'MAX_TOKENS') {
+      return res.status(502).json({
+        error:
+          "La réponse de Gemini a été interrompue avant la fin. Réduis le nombre de matchs demandé ou augmente la limite de sortie."
       });
     }
 
-    const candidate = data?.candidates?.[0];
-    const parts = candidate?.content?.parts || [];
-
-    const rawText = parts
-      .map(part => part?.text || '')
-      .join('')
-      .trim();
+    // Avec @google/genai : response.text, et non response.text().
+    const rawText =
+      typeof response.text === 'string'
+        ? response.text.trim()
+        : '';
 
     if (!rawText) {
-      const blockReason =
-        candidate?.finishReason ||
-        data?.promptFeedback?.blockReason ||
-        'Raison inconnue';
-
       return res.status(502).json({
-        error: `Gemini n'a renvoyé aucun texte exploitable. Motif : ${blockReason}.`
+        error: "Gemini n'a renvoyé aucun texte exploitable.",
+        reason:
+          response.promptFeedback?.blockReason ||
+          candidate?.finishReason ||
+          'UNKNOWN'
       });
     }
 
-    const parsed = extractJsonArray(rawText);
+    let parsed;
 
-    if (!parsed) {
+    try {
+      parsed = extractJsonArray(rawText);
+    } catch (error) {
+      console.error('[pronos] JSON invalide', {
+        message: error.message,
+        finishReason: candidate?.finishReason
+      });
+
       return res.status(502).json({
-        error: "Gemini a répondu, mais sa réponse n'a pas pu être convertie en JSON.",
-        rawResponse: rawText.slice(0, 800)
+        error:
+          "Gemini a répondu, mais le résultat n'est pas un tableau JSON valide. Réessaie."
       });
     }
 
-    const cleaned = parsed
-      .filter(item => item && item.match && item.selection)
-      .map(item => ({
-        type: item.type || 'WINNER',
-        league: item.league || 'Football',
-        match: String(item.match),
-        time: item.time || "Aujourd'hui",
-        selection: String(item.selection),
-        odds: Number(item.odds) || 0,
-        confidence: item.confidence || '70%',
-        tip: item.tip || ''
-      }));
-
-    if (cleaned.length === 0) {
-      return res.status(200).json([]);
+    // Ne pas masquer une réponse mal formée comme une liste vide.
+    if (
+      parsed.some(item =>
+        !item ||
+        typeof item !== 'object' ||
+        Array.isArray(item) ||
+        typeof item.match !== 'string' ||
+        !item.match.trim() ||
+        typeof item.selection !== 'string' ||
+        !item.selection.trim()
+      )
+    ) {
+      return res.status(502).json({
+        error:
+          "La réponse de Gemini contient des matchs incomplets ou mal formatés. Réessaie."
+      });
     }
 
-    return res.status(200).json(cleaned);
+    const matches = parsed.slice(0, 3).map(item => ({
+      league: getText(item.league, 'Football'),
+      match: item.match.trim(),
+      time: getText(item.time, 'Horaire non confirmé'),
+      tip: getText(item.tip, 'Analyse non disponible.'),
+      selection: item.selection.trim(),
+      odds: normalizeOdds(item.odds),
+      confidence: 'Non évaluée'
+    }));
 
+    // IMPORTANT : le HTML attend directement un tableau.
+    return res.status(200).json(matches);
   } catch (error) {
-    return res.status(500).json({
-      error: 'Erreur serveur interne : ' + error.message
+    console.error('[pronos] Erreur Gemini', {
+      name: error?.name,
+      status: error?.status,
+      message: error?.message
+    });
+
+    const upstreamStatus = Number(error?.status);
+
+    const status =
+      Number.isInteger(upstreamStatus) &&
+      upstreamStatus >= 400 &&
+      upstreamStatus <= 599
+        ? upstreamStatus
+        : 500;
+
+    return res.status(status).json({
+      error: getErrorMessage(status)
     });
   }
 }
 
+function getText(value, fallback) {
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : fallback;
+}
+
+function normalizeOdds(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') {
+    return null;
+  }
+
+  if (typeof value === 'string' && !value.trim()) {
+    return null;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) && number > 1
+    ? number
+    : null;
+}
+
 function extractJsonArray(text) {
   const cleaned = text
-    .replace(/```json/gi, '')
-    .replace(/```/g, '')
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
     .trim();
 
-  try {
-    const direct = JSON.parse(cleaned);
-    if (Array.isArray(direct)) return direct;
-    if (Array.isArray(direct?.pronostics)) return direct.pronostics;
-    if (Array.isArray(direct?.suggestions)) return direct.suggestions;
-    if (Array.isArray(direct?.matches)) return direct.matches;
-  } catch (_) {
-    // On continue avec l'extraction par regex
-  }
-
-  const start = cleaned.indexOf('[');
-  const end = cleaned.lastIndexOf(']');
-
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
+  let parsed;
 
   try {
-    const parsed = JSON.parse(cleaned.slice(start, end + 1));
-    return Array.isArray(parsed) ? parsed : null;
-  } catch (_) {
-    return null;
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf('[');
+    const end = cleaned.lastIndexOf(']');
+
+    if (start === -1 || end <= start) {
+      throw new Error('Aucun tableau JSON trouvé.');
+    }
+
+    parsed = JSON.parse(cleaned.slice(start, end + 1));
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('La réponse doit être un tableau JSON.');
+  }
+
+  return parsed;
+}
+
+function getErrorMessage(status) {
+  switch (status) {
+    case 400:
+      return (
+        'Gemini a refusé les paramètres de la requête. ' +
+        'Consulte les journaux pour le détail.'
+      );
+
+    case 401:
+    case 403:
+      return (
+        "Accès Gemini refusé. Vérifie la clé API, ses restrictions " +
+        "et les autorisations du projet."
+      );
+
+    case 404:
+      return (
+        "Le modèle ou la ressource demandé est introuvable. " +
+        "Vérifie GEMINI_MODEL et l'accès du projet à ce modèle."
+      );
+
+    case 429:
+      return (
+        "Limite de requêtes ou quota Gemini atteint. " +
+        "Vérifie les quotas et la facturation, puis réessaie."
+      );
+
+    default:
+      return (
+        "Impossible de récupérer les analyses auprès de Gemini. " +
+        "Consulte le terminal local ou les journaux Vercel."
+      );
   }
 }
