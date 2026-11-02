@@ -1,0 +1,15 @@
+# Dépendances locales
+node_modules/
+
+# Configuration locale Vercel
+.vercel/
+
+# Variables d'environnement et clés secrètes
+.env
+.env.*
+
+# Modèle sans clé secrète
+!.env.example
+
+# Journaux npm
+npm-debug.log*
