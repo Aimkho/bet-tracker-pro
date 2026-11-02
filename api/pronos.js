@@ -39,7 +39,8 @@ Fournis une liste de 3 à 4 pronostics réels du jour sous la forme STRICTE d'un
 ]`;
 
     try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+        // Utilisation du modèle flash actuel supporté par l'API
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -62,7 +63,6 @@ Fournis une liste de 3 à 4 pronostics réels du jour sous la forme STRICTE d'un
             return res.status(500).json({ error: "L'IA Gemini a renvoyé une réponse vide." });
         }
 
-        // Extraction propre du JSON depuis la réponse de Gemini
         const jsonMatch = rawText.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
             return res.status(500).json({ error: "Impossible de formater la réponse de Gemini en JSON." });
