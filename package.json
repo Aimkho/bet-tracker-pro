@@ -1,7 +1,7 @@
 {
-"name": "bet-tracker-pro",
-"version": "1.0.0",
-"type": "module",
-"private": true,
-"dependencies": {}
+  "name": "bettracker-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tableau de bord de paris sportifs et assistant Gemini"
 }
