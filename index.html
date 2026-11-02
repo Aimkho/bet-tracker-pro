@@ -1,654 +1,1802 @@
 <!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tracker de Paris Sportifs PRO</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            border: '#334155'
-                        }
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>BetTracker PRO — Tableau de bord et analyses IA</title>
+
+  <!-- Styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              bg: '#0f172a',
+              card: '#1e293b',
+              border: '#334155'
             }
+          }
         }
-    </script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass-panel { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    </style>
+      }
+    };
+  </script>
+
+  <!-- Graphiques -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Icônes -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  >
+
+  <!-- Police -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+  >
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
+    }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
-    <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Logo & Title -->
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                        <i class="fa-solid fa-chart-line text-lg"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-base font-bold leading-tight">BetTracker <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">PRO</span></h1>
-                        <p class="text-[11px] text-slate-400">Gestion de Capital & Pronostics IA</p>
-                    </div>
-                </div>
+<body
+  class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white"
+>
 
-                <!-- Desktop Navigation Tabs -->
-                <div class="hidden md:flex items-center p-1 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <button id="navDashboardBtn" onclick="switchMainTab('DASHBOARD')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-md">
-                        <i class="fa-solid fa-table-columns"></i>
-                        Tableau de Bord
-                    </button>
-                    <button id="navAiBtn" onclick="switchMainTab('AI')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
-                        <i class="fa-solid fa-robot text-amber-400"></i>
-                        Assistant IA & Pronos
-                    </button>
-                </div>
+  <!-- EN-TÊTE -->
+  <header
+    class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-3">
 
-                <!-- Auth & Action Buttons -->
-                <div class="flex items-center gap-2">
-                    <button onclick="openModal('betModal')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:brightness-110 transition shadow-lg shadow-blue-600/25">
-                        <i class="fa-solid fa-plus"></i>
-                        <span class="hidden sm:inline">Nouveau Pari</span>
-                    </button>
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20"
+          >
+            <i class="fa-solid fa-chart-line text-lg" aria-hidden="true"></i>
+          </div>
 
-                    <button onclick="openModal('configModal')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700" title="Réglages du Capital">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
+          <div class="min-w-0">
+            <h1 class="text-base font-bold leading-tight">
+              BetTracker
+              <span
+                class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20"
+              >
+                PRO
+              </span>
+            </h1>
 
-                    <button id="authBtn" onclick="openModal('authModal')" class="p-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition border border-slate-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-user"></i>
-                        <span id="authBtnText">Connexion</span>
-                    </button>
-                </div>
-            </div>
+            <p class="hidden sm:block text-[11px] text-slate-400">
+              Gestion de capital et analyses IA
+            </p>
+          </div>
         </div>
 
-        <!-- Mobile Navigation Bar -->
-        <div class="md:hidden border-t border-slate-800/80 p-1.5 px-4 bg-slate-900/95 flex gap-2">
-            <button id="mobNavDashBtn" onclick="switchMainTab('DASHBOARD')" class="flex-1 py-2 text-center text-xs font-bold rounded-lg bg-blue-600 text-white flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-table-columns"></i> Dashboard
-            </button>
-            <button id="mobNavAiBtn" onclick="switchMainTab('AI')" class="flex-1 py-2 text-center text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-robot text-amber-400"></i> Assistant IA
-            </button>
+        <nav
+          class="hidden md:flex items-center p-1 bg-slate-950/60 rounded-xl border border-slate-800"
+          aria-label="Navigation principale"
+        >
+          <button
+            type="button"
+            id="navDashboardBtn"
+            onclick="switchMainTab('DASHBOARD')"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white"
+          >
+            <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+            Tableau de bord
+          </button>
+
+          <button
+            type="button"
+            id="navAiBtn"
+            onclick="switchMainTab('AI')"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white"
+          >
+            <i class="fa-solid fa-robot text-amber-400" aria-hidden="true"></i>
+            Assistant IA
+          </button>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="openNewBet()"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:brightness-110 transition"
+            aria-label="Enregistrer un nouveau pari"
+          >
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Nouveau pari</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="openModal('configModal')"
+            class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+            aria-label="Réglages du capital"
+          >
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+          </button>
+
+          <button
+            type="button"
+            id="authBtn"
+            onclick="openModal('authModal')"
+            class="p-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-user" aria-hidden="true"></i>
+            <span
+              id="authBtnText"
+              class="max-w-24 truncate hidden sm:inline"
+            >
+              Profil local
+            </span>
+          </button>
         </div>
-    </header>
-
-    <!-- App Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-        <!-- Banner Alert Box -->
-        <div id="statusAlert" class="hidden p-4 rounded-2xl border flex items-center justify-between text-xs font-medium transition-all">
-            <span id="statusAlertText"></span>
-            <button onclick="hideAlert()" class="text-slate-400 hover:text-white ml-2"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <!-- ==================== TAB 1: DASHBOARD ==================== -->
-        <div id="dashboardSection" class="space-y-6">
-            <!-- Key Metrics Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Capital Actuel</div>
-                    <div class="text-2xl font-extrabold text-white mt-1" id="metricCapital">$100.00</div>
-                    <div class="text-[11px] text-slate-400 mt-1" id="metricInitialCapital">Départ: $100.00</div>
-                </div>
-                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Profit / Perte</div>
-                    <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="metricProfit">+$0.00</div>
-                </div>
-                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Yield (ROI)</div>
-                    <div class="text-2xl font-extrabold text-blue-400 mt-1" id="metricYield">0.0%</div>
-                </div>
-                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Taux de Réussite</div>
-                    <div class="text-2xl font-extrabold text-indigo-400 mt-1" id="metricWinRate">0.0%</div>
-                </div>
-            </div>
-
-            <!-- Chart Section -->
-            <div class="glass-panel p-5 rounded-2xl space-y-3">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-chart-area text-blue-400"></i>
-                        Évolution de la Bankroll
-                    </h3>
-                </div>
-                <div class="h-64 w-full">
-                    <canvas id="bankrollChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Bets History Table -->
-            <div class="glass-panel rounded-2xl overflow-hidden">
-                <div class="p-4 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
-                    <h3 class="text-sm font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-indigo-400"></i>
-                        Journal de vos Paris
-                    </h3>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                                <th class="p-3.5">Date</th>
-                                <th class="p-3.5">Sport & Match</th>
-                                <th class="p-3.5">Mise</th>
-                                <th class="p-3.5">Cote</th>
-                                <th class="p-3.5">Gain Potentiel</th>
-                                <th class="p-3.5">Statut</th>
-                                <th class="p-3.5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="betsTableBody" class="divide-y divide-slate-800/50 text-xs"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== TAB 2: AI ASSISTANT ==================== -->
-        <div id="aiAssistantSection" class="hidden space-y-6">
-            <div class="glass-panel p-6 rounded-2xl space-y-4">
-                <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-4">
-                    <div>
-                        <h3 class="text-base font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-robot text-amber-400"></i>
-                            Assistant Pronostics Ciblés
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Analyses et requêtes en direct via les serveurs Vercel et Gemini</p>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <button onclick="generateAiSuggestions()" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
-                            <i class="fa-solid fa-rotate"></i>
-                            Actualiser les Matchs
-                        </button>
-                    </div>
-                </div>
-
-                <div id="aiSuggestionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="col-span-full p-12 text-center text-slate-400">
-                        <i class="fa-solid fa-satellite-dish text-3xl text-amber-400/60 mb-3 animate-pulse"></i>
-                        <p class="text-sm font-semibold">Cliquez sur "Actualiser les Matchs" pour lancer la recherche IA en direct.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal: Add / Edit Bet -->
-    <div id="betModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-md rounded-2xl p-6 space-y-4 relative border border-slate-700">
-            <button onclick="closeModal('betModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-base font-bold flex items-center gap-2">
-                <i class="fa-solid fa-ticket text-blue-400"></i>
-                Enregistrer un Pari
-            </h3>
-            <form id="betForm" onsubmit="handleBetSubmit(event)" class="space-y-3.5 text-xs">
-                <input type="hidden" id="betId">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Sport / Type de Pari</label>
-                    <select id="betSport" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                        <option value="Football">Football</option>
-                        <option value="Basketball">Basketball</option>
-                        <option value="Tennis">Tennis</option>
-                        <option value="Combiné">🔥 Paris Combiné</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Match / Sélection</label>
-                    <input type="text" id="betMatch" required placeholder="Ex: Real Madrid vs FC Barcelone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Mise ($)</label>
-                        <input type="number" id="betStake" step="0.01" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Cote Totale</label>
-                        <input type="number" id="betOdds" step="0.01" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Date</label>
-                        <input type="date" id="betDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Statut</label>
-                        <select id="betStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                            <option value="PENDING">En Cours</option>
-                            <option value="WON">Gagné</option>
-                            <option value="LOST">Perdu</option>
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-bold text-white shadow-lg shadow-blue-600/30">
-                    Enregistrer le Pari
-                </button>
-            </form>
-        </div>
+      </div>
     </div>
 
-    <!-- Modal: Auth -->
-    <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative border border-slate-700">
-            <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-base font-bold flex items-center gap-2">
-                <i class="fa-solid fa-user-lock text-indigo-400"></i>
-                <span id="authModalTitle">Connexion</span>
-            </h3>
-            <div class="flex border-b border-slate-800 text-xs font-bold">
-                <button type="button" id="authTabLogin" onclick="switchAuthTab('LOGIN')" class="flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500">Se Connecter</button>
-                <button type="button" id="authTabSignup" onclick="switchAuthTab('SIGNUP')" class="flex-1 py-2 text-center text-slate-400">S'inscrire</button>
-            </div>
-            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Adresse Email</label>
-                    <input type="email" id="authEmail" required placeholder="nom@exemple.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Mot de passe</label>
-                    <input type="password" id="authPassword" required minlength="6" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                </div>
-                <button type="submit" id="authSubmitBtn" class="w-full py-3 rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition">
-                    Se Connecter
-                </button>
-            </form>
-        </div>
+    <nav
+      class="md:hidden border-t border-slate-800 p-1.5 px-4 flex gap-2"
+      aria-label="Navigation mobile"
+    >
+      <button
+        type="button"
+        id="mobNavDashBtn"
+        onclick="switchMainTab('DASHBOARD')"
+        class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white"
+      >
+        <i class="fa-solid fa-table-columns mr-1" aria-hidden="true"></i>
+        Tableau de bord
+      </button>
+
+      <button
+        type="button"
+        id="mobNavAiBtn"
+        onclick="switchMainTab('AI')"
+        class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400"
+      >
+        <i class="fa-solid fa-robot mr-1" aria-hidden="true"></i>
+        Assistant IA
+      </button>
+    </nav>
+  </header>
+
+  <!-- CONTENU -->
+  <main
+    class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
+  >
+
+    <div
+      id="statusAlert"
+      role="status"
+      aria-live="polite"
+      class="hidden"
+    >
+      <span id="statusAlertText"></span>
+
+      <button
+        type="button"
+        onclick="hideAlert()"
+        aria-label="Fermer le message"
+        class="ml-3 p-1"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
     </div>
 
-    <!-- Modal: Config Capital -->
-    <div id="configModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative border border-slate-700">
-            <button onclick="closeModal('configModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-base font-bold flex items-center gap-2">
-                <i class="fa-solid fa-gear text-slate-400"></i>
-                Réglages du Capital Initial
-            </h3>
-            <form onsubmit="handleConfigSubmit(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Capital de Départ ($)</label>
-                    <input type="number" id="configInitialCapital" step="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-500 transition">
-                    Enregistrer les Réglages
-                </button>
-            </form>
+    <!-- TABLEAU DE BORD -->
+    <section id="dashboardSection" class="space-y-6">
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-panel p-4 rounded-2xl">
+          <div class="text-[11px] uppercase font-semibold text-slate-400">
+            Capital actuel
+          </div>
+
+          <div
+            id="metricCapital"
+            class="text-2xl font-extrabold mt-1"
+          >
+            $100.00
+          </div>
+
+          <div
+            id="metricInitialCapital"
+            class="text-[11px] text-slate-400 mt-1"
+          >
+            Départ : $100.00
+          </div>
+
+          <div
+            id="metricAvailableCapital"
+            class="text-[11px] text-slate-400 mt-1"
+          >
+            Disponible : $100.00
+          </div>
         </div>
+
+        <div class="glass-panel p-4 rounded-2xl">
+          <div class="text-[11px] uppercase font-semibold text-slate-400">
+            Profit / perte
+          </div>
+
+          <div
+            id="metricProfit"
+            class="text-2xl font-extrabold text-emerald-400 mt-1"
+          >
+            +$0.00
+          </div>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl">
+          <div class="text-[11px] uppercase font-semibold text-slate-400">
+            Rendement des mises
+          </div>
+
+          <div
+            id="metricYield"
+            class="text-2xl font-extrabold text-blue-400 mt-1"
+          >
+            0.0%
+          </div>
+
+          <p class="text-[10px] text-slate-500 mt-1">
+            Calculé sur les paris réglés
+          </p>
+        </div>
+
+        <div class="glass-panel p-4 rounded-2xl">
+          <div class="text-[11px] uppercase font-semibold text-slate-400">
+            Taux de réussite
+          </div>
+
+          <div
+            id="metricWinRate"
+            class="text-2xl font-extrabold text-indigo-400 mt-1"
+          >
+            0.0%
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl space-y-3">
+        <h2 class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-chart-area text-blue-400" aria-hidden="true"></i>
+          Évolution du capital
+        </h2>
+
+        <div class="h-64 w-full">
+          <canvas
+            id="bankrollChart"
+            role="img"
+            aria-label="Graphique d’évolution du capital selon les dates des paris"
+          ></canvas>
+        </div>
+
+        <p id="chartError" class="hidden text-xs text-amber-300">
+          Le graphique n’a pas pu être chargé.
+        </p>
+      </div>
+
+      <div class="glass-panel rounded-2xl overflow-hidden">
+        <div class="p-4 border-b border-slate-800">
+          <h2 class="text-sm font-bold">
+            <i
+              class="fa-solid fa-list-check text-indigo-400 mr-2"
+              aria-hidden="true"
+            ></i>
+            Journal de vos paris
+          </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="bg-slate-900/60 text-[11px] uppercase text-slate-400 border-b border-slate-800"
+              >
+                <th scope="col" class="p-3.5">Date</th>
+                <th scope="col" class="p-3.5">Sport et sélection</th>
+                <th scope="col" class="p-3.5">Mise</th>
+                <th scope="col" class="p-3.5">Cote</th>
+                <th scope="col" class="p-3.5">Retour potentiel</th>
+                <th scope="col" class="p-3.5">Statut</th>
+                <th scope="col" class="p-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody
+              id="betsTableBody"
+              class="divide-y divide-slate-800/50 text-xs"
+            ></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASSISTANT IA -->
+    <section id="aiAssistantSection" class="hidden space-y-6">
+      <div class="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
+
+        <div
+          class="flex items-center justify-between flex-wrap gap-4 border-b border-slate-800 pb-4"
+        >
+          <div>
+            <h2 class="text-base font-bold flex items-center gap-2">
+              <i
+                class="fa-solid fa-robot text-amber-400"
+                aria-hidden="true"
+              ></i>
+              Assistant d’analyses football
+            </h2>
+
+            <p class="text-xs text-slate-400 mt-1">
+              Recherche et analyse via Vercel et Gemini
+            </p>
+          </div>
+
+          <button
+            type="button"
+            id="refreshAiBtn"
+            onclick="generateAiSuggestions()"
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition flex items-center gap-2"
+          >
+            <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+            <span>Actualiser les matchs</span>
+          </button>
+        </div>
+
+        <div
+          class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-200 leading-relaxed"
+        >
+          Les analyses ne garantissent aucun gain. Une recherche Web
+          n’est pas un flux de scores en direct. Vérifiez les dates,
+          les horaires et les cotes avant toute décision.
+        </div>
+
+        <div
+          id="aiSuggestionsGrid"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          aria-live="polite"
+          aria-busy="false"
+        >
+          <div class="col-span-full p-10 text-center text-slate-400">
+            <i
+              class="fa-solid fa-satellite-dish text-3xl text-amber-400/60 mb-3"
+              aria-hidden="true"
+            ></i>
+
+            <p class="text-sm">
+              Cliquez sur « Actualiser les matchs » pour lancer la recherche.
+            </p>
+          </div>
+        </div>
+
+        <p
+          id="aiLastUpdate"
+          class="hidden text-[11px] text-slate-400 leading-relaxed"
+        ></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODALE PARI -->
+  <div
+    id="betModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="betModalTitle"
+    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+  >
+    <div
+      class="glass-panel w-full max-w-md rounded-2xl p-6 space-y-4 relative my-auto"
+    >
+      <button
+        type="button"
+        onclick="closeModal('betModal')"
+        class="absolute top-4 right-4 text-slate-400 hover:text-white"
+        aria-label="Fermer"
+      >
+        <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+      </button>
+
+      <h2 id="betModalTitle" class="text-base font-bold">
+        Enregistrer un pari
+      </h2>
+
+      <form
+        id="betForm"
+        onsubmit="handleBetSubmit(event)"
+        class="space-y-3.5 text-xs"
+      >
+        <input type="hidden" id="betId">
+
+        <div>
+          <label for="betSport" class="block font-semibold text-slate-300 mb-1">
+            Sport / type de pari
+          </label>
+
+          <select
+            id="betSport"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+          >
+            <option value="Football">Football</option>
+            <option value="Basketball">Basketball</option>
+            <option value="Tennis">Tennis</option>
+            <option value="Combiné">Combiné</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="betMatch" class="block font-semibold text-slate-300 mb-1">
+            Match / sélection
+          </label>
+
+          <input
+            type="text"
+            id="betMatch"
+            required
+            maxlength="250"
+            placeholder="Ex. : Équipe A vs Équipe B — sélection"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+          >
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="betStake" class="block font-semibold text-slate-300 mb-1">
+              Mise ($)
+            </label>
+
+            <input
+              type="number"
+              id="betStake"
+              step="0.01"
+              min="0.01"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+            >
+          </div>
+
+          <div>
+            <label for="betOdds" class="block font-semibold text-slate-300 mb-1">
+              Cote
+            </label>
+
+            <input
+              type="number"
+              id="betOdds"
+              step="0.01"
+              min="1"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+            >
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="betDate" class="block font-semibold text-slate-300 mb-1">
+              Date
+            </label>
+
+            <input
+              type="date"
+              id="betDate"
+              required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+            >
+          </div>
+
+          <div>
+            <label for="betStatus" class="block font-semibold text-slate-300 mb-1">
+              Statut
+            </label>
+
+            <select
+              id="betStatus"
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+            >
+              <option value="PENDING">En cours</option>
+              <option value="WON">Gagné</option>
+              <option value="LOST">Perdu</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-bold text-white"
+        >
+          Enregistrer
+        </button>
+      </form>
     </div>
+  </div>
 
-    <!-- Core App Logic -->
-    <script>
-        let currentAuthMode = 'LOGIN';
-        let appState = {
-            user: null,
-            profile: { initialCapital: 100 },
-            bets: []
-        };
-        let chartInstance = null;
+  <!-- MODALE PROFIL LOCAL -->
+  <div
+    id="authModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="authModalTitle"
+    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative">
+      <button
+        type="button"
+        onclick="closeModal('authModal')"
+        class="absolute top-4 right-4 text-slate-400 hover:text-white"
+        aria-label="Fermer"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
 
-        function switchAuthTab(mode) {
-            currentAuthMode = mode;
-            const loginBtn = document.getElementById('authTabLogin');
-            const signupBtn = document.getElementById('authTabSignup');
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const title = document.getElementById('authModalTitle');
+      <h2 id="authModalTitle" class="text-base font-bold">
+        Profil local
+      </h2>
 
-            if (mode === 'LOGIN') {
-                loginBtn.className = "flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500";
-                signupBtn.className = "flex-1 py-2 text-center text-slate-400";
-                submitBtn.textContent = "Se Connecter";
-                title.textContent = "Connexion";
-            } else {
-                signupBtn.className = "flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500";
-                loginBtn.className = "flex-1 py-2 text-center text-slate-400";
-                submitBtn.textContent = "Créer un Compte";
-                title.textContent = "Création de Compte";
-            }
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Démonstration uniquement : aucun compte n’est créé et aucun
+        mot de passe n’est demandé. Les données restent dans ce navigateur.
+        Ce profil ne sépare pas les historiques de paris.
+      </p>
+
+      <form
+        id="authForm"
+        onsubmit="handleAuthSubmit(event)"
+        class="space-y-4 text-xs"
+      >
+        <div>
+          <label for="authEmail" class="block font-semibold mb-1">
+            Adresse e-mail du profil
+          </label>
+
+          <input
+            type="email"
+            id="authEmail"
+            required
+            maxlength="254"
+            autocomplete="email"
+            placeholder="nom@exemple.com"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+          >
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-3 rounded-xl bg-indigo-600 font-bold"
+        >
+          Enregistrer le profil local
+        </button>
+
+        <button
+          type="button"
+          id="logoutBtn"
+          onclick="logoutLocalProfile()"
+          class="hidden w-full py-2 text-slate-400 hover:text-white"
+        >
+          Retirer le profil local
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALE CAPITAL -->
+  <div
+    id="configModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="configModalTitle"
+    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative">
+      <button
+        type="button"
+        onclick="closeModal('configModal')"
+        class="absolute top-4 right-4 text-slate-400 hover:text-white"
+        aria-label="Fermer"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+
+      <h2 id="configModalTitle" class="text-base font-bold">
+        Capital initial
+      </h2>
+
+      <form
+        onsubmit="handleConfigSubmit(event)"
+        class="space-y-4 text-xs"
+      >
+        <div>
+          <label for="configInitialCapital" class="block font-semibold mb-1">
+            Capital de départ ($)
+          </label>
+
+          <input
+            type="number"
+            id="configInitialCapital"
+            min="0.01"
+            step="0.01"
+            required
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5"
+          >
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-3 rounded-xl bg-blue-600 font-bold"
+        >
+          Enregistrer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="max-w-7xl mx-auto w-full px-4 pb-6">
+    <p class="text-[11px] text-slate-500 text-center">
+      Données du journal enregistrées localement dans ce navigateur.
+      Analyses IA indicatives, sans garantie de gain.
+    </p>
+  </footer>
+
+  <script>
+    'use strict';
+
+    const STORAGE_STATE_KEY = 'bet_tracker_state';
+    const STORAGE_USER_KEY = 'bet_tracker_user';
+
+    const VALID_SPORTS = [
+      'Football',
+      'Basketball',
+      'Tennis',
+      'Combiné'
+    ];
+
+    const VALID_STATUSES = ['PENDING', 'WON', 'LOST'];
+
+    let appState = {
+      user: null,
+      profile: {
+        initialCapital: 100
+      },
+      bets: []
+    };
+
+    let chartInstance = null;
+    let alertTimeout = null;
+    let aiRequestInProgress = false;
+    let lastModalTrigger = null;
+
+    function createElement(tag, className = '', text) {
+      const element = document.createElement(tag);
+      element.className = className;
+
+      if (text !== undefined) {
+        element.textContent = String(text);
+      }
+
+      return element;
+    }
+
+    function getText(value, fallback = '') {
+      return typeof value === 'string' && value.trim()
+        ? value.trim()
+        : fallback;
+    }
+
+    function money(value) {
+      return '$' + value.toFixed(2);
+    }
+
+    function getParisDate() {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Paris',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+
+      const values = Object.fromEntries(
+        parts.map(part => [part.type, part.value])
+      );
+
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function isValidDate(value) {
+      if (typeof value !== 'string') return false;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+      const date = new Date(value + 'T00:00:00Z');
+
+      return (
+        !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value
+      );
+    }
+
+    function createBetId() {
+      if (globalThis.crypto?.randomUUID) {
+        return 'bet_' + globalThis.crypto.randomUUID();
+      }
+
+      return (
+        'bet_' +
+        Date.now() +
+        '_' +
+        Math.random().toString(36).slice(2)
+      );
+    }
+
+    function getBetProfit(bet) {
+      if (bet.status === 'WON') {
+        return bet.stake * (bet.odds - 1);
+      }
+
+      if (bet.status === 'LOST') {
+        return -bet.stake;
+      }
+
+      return 0;
+    }
+
+    // ALERTES
+
+    function showAlert(message, type = 'INFO') {
+      clearTimeout(alertTimeout);
+
+      const element = document.getElementById('statusAlert');
+      const text = document.getElementById('statusAlertText');
+
+      const styles = {
+        SUCCESS:
+          'bg-emerald-950/80 border-emerald-500/30 text-emerald-300',
+        ERROR:
+          'bg-rose-950/80 border-rose-500/30 text-rose-300',
+        INFO:
+          'bg-blue-950/80 border-blue-500/30 text-blue-300'
+      };
+
+      text.textContent = message;
+
+      element.className =
+        'p-4 rounded-2xl border flex items-center justify-between ' +
+        'text-xs font-medium ' +
+        (styles[type] || styles.INFO);
+
+      alertTimeout = setTimeout(hideAlert, 6000);
+    }
+
+    function hideAlert() {
+      clearTimeout(alertTimeout);
+      document.getElementById('statusAlert').classList.add('hidden');
+    }
+
+    // STOCKAGE LOCAL
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem(
+          STORAGE_STATE_KEY,
+          JSON.stringify({
+            profile: appState.profile,
+            bets: appState.bets
+          })
+        );
+
+        return true;
+      } catch (error) {
+        console.error('Erreur de sauvegarde locale :', error);
+
+        showAlert(
+          'Les modifications sont visibles, mais leur sauvegarde locale a échoué.',
+          'ERROR'
+        );
+
+        return false;
+      }
+    }
+
+    function loadLocalData() {
+      let loadingError = false;
+
+      try {
+        const savedUser = localStorage.getItem(STORAGE_USER_KEY);
+
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+
+          if (
+            user &&
+            typeof user.email === 'string' &&
+            user.email.includes('@')
+          ) {
+            appState.user = {
+              email: user.email
+            };
+          }
         }
+      } catch (error) {
+        console.error('Erreur de chargement du profil :', error);
+        loadingError = true;
+      }
 
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('authEmail');
-            if (!emailInput) return;
-            const email = emailInput.value.trim();
-            if (!email) return;
+      try {
+        const saved = localStorage.getItem(STORAGE_STATE_KEY);
 
-            appState.user = { email };
-            localStorage.setItem('bet_tracker_user', JSON.stringify(appState.user));
+        if (saved) {
+          const parsed = JSON.parse(saved);
 
-            document.getElementById('authBtnText').textContent = email.split('@')[0];
-            closeModal('authModal');
-            showAlert(currentAuthMode === 'LOGIN' ? 'Connexion réussie !' : 'Compte créé avec succès !', 'SUCCESS');
-        }
+          const capital = Number(parsed?.profile?.initialCapital);
 
-        function handleConfigSubmit(e) {
-            e.preventDefault();
-            const val = parseFloat(document.getElementById('configInitialCapital').value);
-            if (!isNaN(val) && val > 0) {
-                appState.profile.initialCapital = val;
-                saveLocalState();
-                renderAll();
-                closeModal('configModal');
-                showAlert('Capital initial mis à jour !', 'SUCCESS');
-            }
-        }
+          if (Number.isFinite(capital) && capital > 0) {
+            appState.profile.initialCapital = capital;
+          }
 
-        function saveLocalState() {
-            localStorage.setItem('bet_tracker_state', JSON.stringify({
-                profile: appState.profile,
-                bets: appState.bets
-            }));
-        }
+          if (Array.isArray(parsed?.bets)) {
+            const usedIds = new Set();
 
-        function loadLocalData() {
-            try {
-                const savedUser = localStorage.getItem('bet_tracker_user');
-                if (savedUser) {
-                    appState.user = JSON.parse(savedUser);
-                    document.getElementById('authBtnText').textContent = appState.user.email.split('@')[0];
+            appState.bets = parsed.bets
+              .filter(bet =>
+                bet &&
+                typeof bet.match === 'string' &&
+                bet.match.trim() &&
+                VALID_SPORTS.includes(bet.sport) &&
+                VALID_STATUSES.includes(bet.status) &&
+                isValidDate(bet.date) &&
+                Number.isFinite(Number(bet.stake)) &&
+                Number(bet.stake) > 0 &&
+                Number.isFinite(Number(bet.odds)) &&
+                Number(bet.odds) >= 1 &&
+                Number.isFinite(
+                  Number(bet.stake) * Number(bet.odds)
+                )
+              )
+              .map(bet => {
+                let id =
+                  typeof bet.id === 'string' && bet.id
+                    ? bet.id
+                    : createBetId();
+
+                if (usedIds.has(id)) {
+                  id = createBetId();
                 }
-                const saved = localStorage.getItem('bet_tracker_state');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.profile) appState.profile = { ...appState.profile, ...parsed.profile };
-                    if (parsed.bets) appState.bets = parsed.bets;
+
+                usedIds.add(id);
+
+                return {
+                  id,
+                  sport: bet.sport,
+                  match: bet.match.trim(),
+                  stake: Number(bet.stake),
+                  odds: Number(bet.odds),
+                  date: bet.date,
+                  status: bet.status
+                };
+              });
+          }
+        }
+      } catch (error) {
+        console.error('Erreur de chargement du journal :', error);
+        loadingError = true;
+      }
+
+      updateLocalProfile();
+
+      if (loadingError) {
+        showAlert(
+          'Certaines données locales n’ont pas pu être chargées.',
+          'ERROR'
+        );
+      }
+    }
+
+    // PROFIL LOCAL DE DÉMONSTRATION
+
+    function updateLocalProfile() {
+      const user = appState.user;
+
+      document.getElementById('authBtnText').textContent =
+        user ? user.email.split('@')[0] : 'Profil local';
+
+      document.getElementById('logoutBtn').classList.toggle(
+        'hidden',
+        !user
+      );
+    }
+
+    function handleAuthSubmit(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('authEmail').value.trim();
+
+      if (!email) return;
+
+      const user = { email };
+
+      try {
+        localStorage.setItem(
+          STORAGE_USER_KEY,
+          JSON.stringify(user)
+        );
+      } catch (error) {
+        console.error(error);
+
+        showAlert(
+          'Impossible de sauvegarder le profil local.',
+          'ERROR'
+        );
+
+        return;
+      }
+
+      appState.user = user;
+
+      updateLocalProfile();
+      closeModal('authModal');
+      showAlert('Profil local enregistré.', 'SUCCESS');
+    }
+
+    function logoutLocalProfile() {
+      try {
+        localStorage.removeItem(STORAGE_USER_KEY);
+      } catch (error) {
+        console.error(error);
+        showAlert('Impossible de retirer le profil local.', 'ERROR');
+        return;
+      }
+
+      appState.user = null;
+
+      updateLocalProfile();
+      document.getElementById('authForm').reset();
+      closeModal('authModal');
+
+      showAlert(
+        'Profil retiré. Le journal des paris reste dans ce navigateur.',
+        'SUCCESS'
+      );
+    }
+
+    // MODALES
+
+    function openModal(id) {
+      const modal = document.getElementById(id);
+
+      if (!modal) return;
+
+      lastModalTrigger = document.activeElement;
+
+      if (id === 'configModal') {
+        document.getElementById('configInitialCapital').value =
+          appState.profile.initialCapital;
+      }
+
+      if (id === 'authModal') {
+        document.getElementById('authEmail').value =
+          appState.user?.email || '';
+      }
+
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      const input = modal.querySelector(
+        'input:not([type="hidden"]), select'
+      );
+
+      requestAnimationFrame(() => input?.focus());
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+
+      if (!modal) return;
+
+      modal.classList.add('hidden');
+
+      const anotherOpen = document.querySelector(
+        '[role="dialog"]:not(.hidden)'
+      );
+
+      if (!anotherOpen) {
+        document.body.style.overflow = '';
+        lastModalTrigger?.focus();
+      }
+    }
+
+    // CONFIGURATION DU CAPITAL
+
+    function handleConfigSubmit(event) {
+      event.preventDefault();
+
+      const capital = Number(
+        document.getElementById('configInitialCapital').value
+      );
+
+      if (!Number.isFinite(capital) || capital <= 0) {
+        showAlert('Saisis un capital initial valide.', 'ERROR');
+        return;
+      }
+
+      appState.profile.initialCapital = capital;
+
+      const saved = saveLocalState();
+
+      renderAll();
+      closeModal('configModal');
+
+      if (saved) {
+        showAlert('Capital initial mis à jour.', 'SUCCESS');
+      }
+    }
+
+    // GESTION DES PARIS
+
+    function openNewBet() {
+      document.getElementById('betForm').reset();
+      document.getElementById('betId').value = '';
+      document.getElementById('betDate').value = getParisDate();
+      document.getElementById('betModalTitle').textContent =
+        'Enregistrer un pari';
+
+      openModal('betModal');
+    }
+
+    function editBet(id) {
+      const bet = appState.bets.find(item => item.id === id);
+
+      if (!bet) return;
+
+      document.getElementById('betId').value = bet.id;
+      document.getElementById('betSport').value = bet.sport;
+      document.getElementById('betMatch').value = bet.match;
+      document.getElementById('betStake').value = bet.stake;
+      document.getElementById('betOdds').value = bet.odds;
+      document.getElementById('betDate').value = bet.date;
+      document.getElementById('betStatus').value = bet.status;
+      document.getElementById('betModalTitle').textContent =
+        'Modifier le pari';
+
+      openModal('betModal');
+    }
+
+    function handleBetSubmit(event) {
+      event.preventDefault();
+
+      const id =
+        document.getElementById('betId').value || createBetId();
+
+      const sport = document.getElementById('betSport').value;
+      const match = document.getElementById('betMatch').value.trim();
+      const stake = Number(document.getElementById('betStake').value);
+      const odds = Number(document.getElementById('betOdds').value);
+      const date = document.getElementById('betDate').value;
+      const status = document.getElementById('betStatus').value;
+
+      if (
+        !match ||
+        !VALID_SPORTS.includes(sport) ||
+        !VALID_STATUSES.includes(status) ||
+        !Number.isFinite(stake) ||
+        stake <= 0 ||
+        !Number.isFinite(odds) ||
+        odds < 1 ||
+        !Number.isFinite(stake * odds) ||
+        !isValidDate(date)
+      ) {
+        showAlert('Vérifie les informations du pari.', 'ERROR');
+        return;
+      }
+
+      const bet = {
+        id,
+        sport,
+        match,
+        stake,
+        odds,
+        date,
+        status
+      };
+
+      const index = appState.bets.findIndex(item => item.id === id);
+
+      if (index >= 0) {
+        appState.bets[index] = bet;
+      } else {
+        appState.bets.unshift(bet);
+      }
+
+      const saved = saveLocalState();
+
+      renderAll();
+      closeModal('betModal');
+
+      if (saved) {
+        showAlert('Pari enregistré.', 'SUCCESS');
+      }
+    }
+
+    function deleteBet(id) {
+      if (!window.confirm('Supprimer ce pari du journal ?')) {
+        return;
+      }
+
+      appState.bets = appState.bets.filter(bet => bet.id !== id);
+
+      const saved = saveLocalState();
+
+      renderAll();
+
+      if (saved) {
+        showAlert('Pari supprimé.', 'SUCCESS');
+      }
+    }
+
+    // NAVIGATION
+
+    function switchMainTab(tab) {
+      const isDashboard = tab === 'DASHBOARD';
+
+      document.getElementById('dashboardSection').classList.toggle(
+        'hidden',
+        !isDashboard
+      );
+
+      document.getElementById('aiAssistantSection').classList.toggle(
+        'hidden',
+        isDashboard
+      );
+
+      const desktopBase =
+        'flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition ';
+
+      const mobileBase =
+        'flex-1 py-2 text-xs font-bold rounded-lg ';
+
+      const inactive = 'text-slate-400 hover:text-white';
+
+      document.getElementById('navDashboardBtn').className =
+        desktopBase +
+        (isDashboard ? 'bg-blue-600 text-white' : inactive);
+
+      document.getElementById('navAiBtn').className =
+        desktopBase +
+        (!isDashboard ? 'bg-amber-500 text-slate-950' : inactive);
+
+      document.getElementById('mobNavDashBtn').className =
+        mobileBase +
+        (isDashboard ? 'bg-blue-600 text-white' : inactive);
+
+      document.getElementById('mobNavAiBtn').className =
+        mobileBase +
+        (!isDashboard ? 'bg-amber-500 text-slate-950' : inactive);
+
+      if (isDashboard) {
+        requestAnimationFrame(() => chartInstance?.resize());
+      }
+    }
+
+    // INDICATEURS
+
+    function renderMetrics() {
+      let profit = 0;
+      let wonCount = 0;
+      let settledCount = 0;
+      let settledStakes = 0;
+      let pendingStakes = 0;
+
+      appState.bets.forEach(bet => {
+        profit += getBetProfit(bet);
+
+        if (bet.status === 'PENDING') {
+          pendingStakes += bet.stake;
+          return;
+        }
+
+        settledCount++;
+        settledStakes += bet.stake;
+
+        if (bet.status === 'WON') {
+          wonCount++;
+        }
+      });
+
+      const capital = appState.profile.initialCapital + profit;
+      const available = capital - pendingStakes;
+
+      const yieldValue =
+        settledStakes > 0 ? (profit / settledStakes) * 100 : 0;
+
+      const winRate =
+        settledCount > 0 ? (wonCount / settledCount) * 100 : 0;
+
+      document.getElementById('metricCapital').textContent =
+        money(capital);
+
+      document.getElementById('metricInitialCapital').textContent =
+        'Départ : ' + money(appState.profile.initialCapital);
+
+      document.getElementById('metricAvailableCapital').textContent =
+        'Disponible : ' + money(available);
+
+      const profitElement = document.getElementById('metricProfit');
+
+      profitElement.textContent =
+        (profit >= 0 ? '+' : '-') + money(Math.abs(profit));
+
+      profitElement.className =
+        'text-2xl font-extrabold mt-1 ' +
+        (profit >= 0 ? 'text-emerald-400' : 'text-rose-400');
+
+      const yieldElement = document.getElementById('metricYield');
+
+      yieldElement.textContent =
+        (yieldValue >= 0 ? '+' : '') + yieldValue.toFixed(1) + '%';
+
+      yieldElement.className =
+        'text-2xl font-extrabold mt-1 ' +
+        (yieldValue >= 0 ? 'text-blue-400' : 'text-rose-400');
+
+      document.getElementById('metricWinRate').textContent =
+        winRate.toFixed(1) + '%';
+    }
+
+    function renderChart() {
+      const errorElement = document.getElementById('chartError');
+
+      if (typeof Chart === 'undefined') {
+        errorElement.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const labels = ['Départ'];
+        const values = [appState.profile.initialCapital];
+
+        let runningCapital = appState.profile.initialCapital;
+
+        const sorted = [...appState.bets].sort(
+          (a, b) => a.date.localeCompare(b.date)
+        );
+
+        sorted.forEach(bet => {
+          if (bet.status === 'PENDING') return;
+
+          runningCapital += getBetProfit(bet);
+          labels.push(bet.date);
+          values.push(runningCapital);
+        });
+
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(
+          document.getElementById('bankrollChart'),
+          {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Capital ($)',
+                  data: values,
+                  borderColor: '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  borderWidth: 3,
+                  fill: true,
+                  tension: 0.25,
+                  pointRadius: 3
                 }
-            } catch (e) {
-                console.error("Erreur de chargement local:", e);
-            }
-        }
-
-        function showAlert(msg, type = 'INFO') {
-            const el = document.getElementById('statusAlert');
-            const txt = document.getElementById('statusAlertText');
-            if (!el || !txt) return;
-            txt.textContent = msg;
-            el.className = `p-4 rounded-2xl border flex items-center justify-between text-xs font-medium transition-all ${
-                type === 'SUCCESS' ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-300' : 'bg-blue-950/80 border-blue-500/30 text-blue-300'
-            }`;
-            el.classList.remove('hidden');
-            setTimeout(() => { hideAlert(); }, 4000);
-        }
-
-        function hideAlert() {
-            const el = document.getElementById('statusAlert');
-            if (el) el.classList.add('hidden');
-        }
-
-        function openModal(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                if (id === 'betModal') {
-                    document.getElementById('betDate').value = new Date().toISOString().split('T')[0];
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
                 }
-                if (id === 'configModal') {
-                    document.getElementById('configInitialCapital').value = appState.profile.initialCapital;
-                }
-                el.classList.remove('hidden');
-            }
-        }
-
-        function closeModal(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('hidden');
-        }
-
-        function handleBetSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('betId').value || 'bet_' + Date.now();
-            const sport = document.getElementById('betSport').value;
-            const match = document.getElementById('betMatch').value;
-            const stake = parseFloat(document.getElementById('betStake').value);
-            const odds = parseFloat(document.getElementById('betOdds').value);
-            const date = document.getElementById('betDate').value;
-            const status = document.getElementById('betStatus').value;
-
-            const idx = appState.bets.findIndex(b => b.id === id);
-            const betObj = { id, sport, match, stake, odds, date, status };
-
-            if (idx >= 0) appState.bets[idx] = betObj;
-            else appState.bets.unshift(betObj);
-
-            saveLocalState();
-            renderAll();
-            closeModal('betModal');
-            showAlert('Pari enregistré avec succès !', 'SUCCESS');
-        }
-
-        function deleteBet(id) {
-            appState.bets = appState.bets.filter(b => b.id !== id);
-            saveLocalState();
-            renderAll();
-        }
-
-        function switchMainTab(tab) {
-            const dash = document.getElementById('dashboardSection');
-            const ai = document.getElementById('aiAssistantSection');
-            const dashBtn = document.getElementById('navDashboardBtn');
-            const aiBtn = document.getElementById('navAiBtn');
-            const mobDashBtn = document.getElementById('mobNavDashBtn');
-            const mobAiBtn = document.getElementById('mobNavAiBtn');
-
-            if (tab === 'DASHBOARD') {
-                dash.classList.remove('hidden');
-                ai.classList.add('hidden');
-                dashBtn.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-md";
-                aiBtn.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
-                mobDashBtn.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg bg-blue-600 text-white flex items-center justify-center gap-1.5";
-                mobAiBtn.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
-            } else {
-                dash.classList.add('hidden');
-                ai.classList.remove('hidden');
-                aiBtn.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
-                dashBtn.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
-                mobAiBtn.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5";
-                mobDashBtn.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
-            }
-        }
-
-        function renderMetrics() {
-            let totalProfit = 0;
-            let wonCount = 0;
-            let settledCount = 0;
-            let totalInvested = 0;
-
-            appState.bets.forEach(b => {
-                if (b.status === 'WON') {
-                    const profit = (b.stake * b.odds) - b.stake;
-                    totalProfit += profit;
-                    wonCount++;
-                    settledCount++;
-                    totalInvested += b.stake;
-                } else if (b.status === 'LOST') {
-                    totalProfit -= b.stake;
-                    settledCount++;
-                    totalInvested += b.stake;
-                }
-            });
-
-            const currentCap = appState.profile.initialCapital + totalProfit;
-            const yieldVal = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
-            const winRate = settledCount > 0 ? (wonCount / settledCount) * 100 : 0;
-
-            document.getElementById('metricCapital').textContent = `$${currentCap.toFixed(2)}`;
-            document.getElementById('metricInitialCapital').textContent = `Départ: $${appState.profile.initialCapital.toFixed(2)}`;
-            
-            const profitEl = document.getElementById('metricProfit');
-            profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)}`;
-            profitEl.className = `text-2xl font-extrabold mt-1 ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-
-            const yieldEl = document.getElementById('metricYield');
-            yieldEl.textContent = `${yieldVal >= 0 ? '+' : ''}${yieldVal.toFixed(1)}%`;
-            yieldEl.className = `text-2xl font-extrabold mt-1 ${yieldVal >= 0 ? 'text-blue-400' : 'text-rose-400'}`;
-
-            document.getElementById('metricWinRate').textContent = `${winRate.toFixed(1)}%`;
-
-            renderChart(currentCap);
-        }
-
-        function renderChart(currentCap) {
-            const ctx = document.getElementById('bankrollChart').getContext('2d');
-            let historyLabels = ['Départ'];
-            let historyData = [appState.profile.initialCapital];
-            let runningCap = appState.profile.initialCapital;
-
-            // Tri chronologique des paris pour le graphique
-            const sorted = [...appState.bets].sort((a, b) => new Date(a.date) - new Date(b.date));
-            sorted.forEach(b => {
-                historyLabels.push(b.date);
-                if (b.status === 'WON') runningCap += (b.stake * b.odds) - b.stake;
-                else if (b.status === 'LOST') runningCap -= b.stake;
-                historyData.push(runningCap);
-            });
-
-            if (chartInstance) chartInstance.destroy();
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: historyLabels,
-                    datasets: [{
-                        label: 'Bankroll ($)',
-                        data: historyData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.3
-                    }]
+              },
+              scales: {
+                x: {
+                  grid: {
+                    color: 'rgba(255,255,255,0.05)'
+                  },
+                  ticks: {
+                    color: '#94a3b8'
+                  }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
-                    }
+                y: {
+                  grid: {
+                    color: 'rgba(255,255,255,0.05)'
+                  },
+                  ticks: {
+                    color: '#94a3b8'
+                  }
                 }
-            });
-        }
-
-        function renderBetsTable() {
-            const tbody = document.getElementById('betsTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            if (appState.bets.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucun pari enregistré pour le moment.</td></tr>`;
-                return;
+              }
             }
-            appState.bets.forEach(b => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-900/40 border-b border-slate-800/40';
-                
-                let badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                let statusLabel = 'En Cours';
-                if (b.status === 'WON') {
-                    badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                    statusLabel = 'Gagné';
-                } else if (b.status === 'LOST') {
-                    badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                    statusLabel = 'Perdu';
-                }
+          }
+        );
 
-                tr.innerHTML = `
-                    <td class="p-3.5 text-slate-400">${b.date}</td>
-                    <td class="p-3.5">
-                        <div class="font-bold text-white">${b.match}</div>
-                        <div class="text-[10px] text-slate-400">${b.sport}</div>
-                    </td>
-                    <td class="p-3.5 font-bold text-slate-200">$${b.stake.toFixed(2)}</td>
-                    <td class="p-3.5 font-bold text-amber-400">@${b.odds.toFixed(2)}</td>
-                    <td class="p-3.5 font-bold text-emerald-400">$${(b.stake * b.odds).toFixed(2)}</td>
-                    <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[11px] border ${badgeClass}">${statusLabel}</span></td>
-                    <td class="p-3.5 text-right">
-                        <button onclick="deleteBet('${b.id}')" class="text-slate-400 hover:text-rose-400 transition p-1"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        errorElement.classList.add('hidden');
+      } catch (error) {
+        console.error('Erreur du graphique :', error);
+        errorElement.classList.remove('hidden');
+      }
+    }
+
+    function renderBetsTable() {
+      const tbody = document.getElementById('betsTableBody');
+      tbody.replaceChildren();
+
+      if (appState.bets.length === 0) {
+        const row = document.createElement('tr');
+
+        const cell = createElement(
+          'td',
+          'p-6 text-center text-slate-500',
+          'Aucun pari enregistré pour le moment.'
+        );
+
+        cell.colSpan = 7;
+        row.appendChild(cell);
+        tbody.appendChild(row);
+
+        return;
+      }
+
+      const statuses = {
+        PENDING: {
+          label: 'En cours',
+          classes:
+            'bg-amber-500/10 text-amber-400 border-amber-500/20'
+        },
+        WON: {
+          label: 'Gagné',
+          classes:
+            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+        },
+        LOST: {
+          label: 'Perdu',
+          classes:
+            'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        }
+      };
+
+      appState.bets.forEach(bet => {
+        const row = createElement(
+          'tr',
+          'hover:bg-slate-900/40'
+        );
+
+        row.appendChild(
+          createElement('td', 'p-3.5 text-slate-400', bet.date)
+        );
+
+        const matchCell = createElement('td', 'p-3.5');
+
+        matchCell.append(
+          createElement('div', 'font-bold text-white', bet.match),
+          createElement('div', 'text-[10px] text-slate-400', bet.sport)
+        );
+
+        row.append(
+          matchCell,
+          createElement(
+            'td',
+            'p-3.5 font-bold text-slate-200',
+            money(bet.stake)
+          ),
+          createElement(
+            'td',
+            'p-3.5 font-bold text-amber-400',
+            '@' + bet.odds.toFixed(2)
+          ),
+          createElement(
+            'td',
+            'p-3.5 font-bold text-emerald-400',
+            money(bet.stake * bet.odds)
+          )
+        );
+
+        const statusCell = createElement('td', 'p-3.5');
+        const status = statuses[bet.status];
+
+        statusCell.appendChild(
+          createElement(
+            'span',
+            'px-2 py-0.5 rounded text-[11px] border ' + status.classes,
+            status.label
+          )
+        );
+
+        const actions = createElement(
+          'td',
+          'p-3.5 text-right whitespace-nowrap'
+        );
+
+        const editButton = createElement(
+          'button',
+          'p-2 text-slate-400 hover:text-blue-400'
+        );
+
+        editButton.type = 'button';
+        editButton.setAttribute('aria-label', 'Modifier le pari');
+        editButton.title = 'Modifier le pari';
+        editButton.innerHTML =
+          '<i class="fa-solid fa-pen" aria-hidden="true"></i>';
+
+        editButton.addEventListener('click', () => editBet(bet.id));
+
+        const deleteButton = createElement(
+          'button',
+          'p-2 text-slate-400 hover:text-rose-400'
+        );
+
+        deleteButton.type = 'button';
+        deleteButton.setAttribute('aria-label', 'Supprimer le pari');
+        deleteButton.title = 'Supprimer le pari';
+        deleteButton.innerHTML =
+          '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+
+        deleteButton.addEventListener(
+          'click',
+          () => deleteBet(bet.id)
+        );
+
+        actions.append(editButton, deleteButton);
+        row.append(statusCell, actions);
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderBetsTable();
+      renderChart();
+    }
+
+    // ASSISTANT IA
+
+    async function generateAiSuggestions() {
+      if (aiRequestInProgress) return;
+
+      const grid = document.getElementById('aiSuggestionsGrid');
+      const button = document.getElementById('refreshAiBtn');
+      const updateElement = document.getElementById('aiLastUpdate');
+
+      aiRequestInProgress = true;
+      button.disabled = true;
+      grid.setAttribute('aria-busy', 'true');
+
+      updateElement.classList.add('hidden');
+      updateElement.textContent = '';
+
+      button.innerHTML = `
+        <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+        <span>Recherche en cours...</span>
+      `;
+
+      grid.innerHTML = `
+        <div class="col-span-full p-10 text-center text-amber-400 space-y-3">
+          <i
+            class="fa-solid fa-circle-notch fa-spin text-2xl"
+            aria-hidden="true"
+          ></i>
+          <p class="text-sm font-semibold">
+            Recherche et analyse des matchs du jour...
+          </p>
+          <p class="text-xs text-slate-400">
+            La réponse peut prendre un moment.
+          </p>
+        </div>
+      `;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000);
+
+      try {
+        const response = await fetch('/api/pronos', {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json'
+          },
+          signal: controller.signal
+        });
+
+        const responseText = await response.text();
+
+        let data;
+
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(
+            `Réponse serveur non JSON (HTTP ${response.status}). ` +
+            'Vérifie la route /api/pronos et les journaux du serveur.'
+          );
         }
 
-        function renderAll() {
-            renderMetrics();
-            renderBetsTable();
+        if (!response.ok) {
+          throw new Error(
+            getText(
+              data?.error,
+              `Erreur serveur HTTP ${response.status}.`
+            )
+          );
         }
 
-        async function generateAiSuggestions() {
-            const grid = document.getElementById('aiSuggestionsGrid');
-            if (!grid) return;
-            grid.innerHTML = `
-                <div class="col-span-full p-12 text-center text-amber-400 space-y-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
-                    <p class="text-xs font-semibold">Interrogation des serveurs Gemini en cours (Recherche Web H2H)...</p>
-                </div>
-            `;
-            try {
-                const res = await fetch('/api/pronos');
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(data.error || data.message || "Erreur de connexion serveur.");
-                }
-
-                if (Array.isArray(data) && data.length > 0) {
-                    grid.innerHTML = data.map(item => `
-                        <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-2.5 flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                                    <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-semibold">${item.league || 'Match'}</span>
-                                    <span>${item.time || 'Aujourd\'hui'}</span>
-                                </div>
-                                <h4 class="font-extrabold text-white text-sm">${item.match}</h4>
-                                <p class="text-xs text-slate-300 mt-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">💡 ${item.tip || ''}</p>
-                            </div>
-                            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                                <div>
-                                    <div class="text-[10px] text-slate-400">Pari Recommandé</div>
-                                    <div class="text-xs font-bold text-amber-400">${item.selection} (@${item.odds})</div>
-                                </div>
-                                <span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold">${item.confidence || '80%'}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400">Aucun match trouvé pour l'instant. Réessayez plus tard.</div>`;
-                }
-            } catch (e) {
-                grid.innerHTML = `
-                    <div class="col-span-full p-6 bg-rose-950/40 border border-rose-500/30 rounded-xl text-rose-300 text-xs space-y-2">
-                        <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Erreur Assistant IA</div>
-                        <p>${e.message}</p>
-                    </div>
-                `;
-            }
+        if (!Array.isArray(data)) {
+          throw new Error(
+            "Format inattendu : l'API doit renvoyer directement un tableau."
+          );
         }
 
-        window.onload = function() {
-            loadLocalData();
-            renderAll();
-        };
-    </script>
+        if (
+          data.some(item =>
+            !item ||
+            typeof item.match !== 'string' ||
+            !item.match.trim() ||
+            typeof item.selection !== 'string' ||
+            !item.selection.trim()
+          )
+        ) {
+          throw new Error(
+            'La réponse contient des matchs incomplets ou mal formatés.'
+          );
+        }
+
+        grid.replaceChildren();
+
+        if (data.length === 0) {
+          grid.appendChild(
+            createElement(
+              'div',
+              'col-span-full p-10 text-center text-slate-400',
+              'Aucun match à venir n’a pu être confirmé pour aujourd’hui.'
+            )
+          );
+        } else {
+          data.slice(0, 3).forEach(item => {
+            grid.appendChild(createAiCard(item));
+          });
+        }
+
+        const receivedAt = new Date().toLocaleString('fr-FR', {
+          timeZone: 'Europe/Paris',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        updateElement.textContent =
+          `Réponse reçue le ${receivedAt} (heure de Paris). ` +
+          'Cet horodatage indique la réception de la réponse, ' +
+          'pas la date de mise à jour des informations sportives.';
+
+        updateElement.classList.remove('hidden');
+      } catch (error) {
+        console.error('Erreur assistant IA :', error);
+
+        grid.replaceChildren();
+
+        const box = createElement(
+          'div',
+          'col-span-full p-6 bg-rose-950/40 border ' +
+          'border-rose-500/30 rounded-xl text-rose-300 text-xs space-y-3'
+        );
+
+        const message =
+          error.name === 'AbortError'
+            ? 'Le délai d’attente a été dépassé. Réessaie dans un moment.'
+            : error.message || 'Une erreur inconnue est survenue.';
+
+        box.append(
+          createElement(
+            'div',
+            'font-bold',
+            '⚠ Erreur Assistant IA'
+          ),
+          createElement('p', 'leading-relaxed', message),
+          createElement(
+            'p',
+            'text-rose-200/70',
+            'Pour isoler le problème, ouvre /api/pronos sur le même site.'
+          )
+        );
+
+        grid.appendChild(box);
+      } finally {
+        clearTimeout(timeout);
+
+        aiRequestInProgress = false;
+        button.disabled = false;
+        grid.setAttribute('aria-busy', 'false');
+
+        button.innerHTML = `
+          <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+          <span>Actualiser les matchs</span>
+        `;
+      }
+    }
+
+    function createAiCard(item) {
+      const card = createElement(
+        'article',
+        'glass-panel p-4 rounded-xl border border-slate-800 ' +
+        'space-y-4 flex flex-col justify-between'
+      );
+
+      const content = createElement('div');
+
+      const header = createElement(
+        'div',
+        'flex items-start justify-between gap-3 text-[11px] mb-2'
+      );
+
+      header.append(
+        createElement(
+          'span',
+          'px-2 py-1 rounded bg-blue-500/10 text-blue-400 font-semibold',
+          getText(item.league, 'Football')
+        ),
+        createElement(
+          'span',
+          'text-slate-400 text-right',
+          getText(item.time, 'Horaire non confirmé')
+        )
+      );
+
+      content.append(
+        header,
+        createElement(
+          'h3',
+          'font-extrabold text-white text-sm',
+          item.match
+        ),
+        createElement(
+          'p',
+          'text-xs text-slate-300 mt-3 bg-slate-900/60 ' +
+          'p-3 rounded-lg border border-slate-800 leading-relaxed',
+          '💡 ' + getText(item.tip, 'Analyse non disponible.')
+        )
+      );
+
+      const footer = createElement(
+        'div',
+        'pt-3 border-t border-slate-800/80 space-y-3'
+      );
+
+      const oddsAvailable =
+        typeof item.odds === 'number' &&
+        Number.isFinite(item.odds) &&
+        item.odds > 1;
+
+      footer.append(
+        createElement(
+          'div',
+          'text-[10px] uppercase text-slate-400',
+          'Piste d’analyse'
+        ),
+        createElement(
+          'div',
+          'text-xs font-bold text-amber-400 leading-relaxed',
+          item.selection
+        ),
+        createElement(
+          'div',
+          'text-[11px] text-slate-400',
+          oddsAvailable
+            ? `Cote communiquée : @${item.odds.toFixed(2)} — à vérifier`
+            : 'Cote non vérifiée'
+        ),
+        createElement(
+          'span',
+          'inline-block px-2 py-1 rounded bg-slate-700/50 ' +
+          'text-slate-300 text-[10px]',
+          'Confiance non évaluée'
+        )
+      );
+
+      card.append(content, footer);
+
+      return card;
+    }
+
+    // INITIALISATION ET INTERACTIONS DES MODALES
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLocalData();
+      renderAll();
+      switchMainTab('DASHBOARD');
+
+      document.querySelectorAll('[role="dialog"]').forEach(modal => {
+        modal.addEventListener('click', event => {
+          if (event.target === modal) {
+            closeModal(modal.id);
+          }
+        });
+      });
+
+      document.addEventListener('keydown', event => {
+        const modal = document.querySelector(
+          '[role="dialog"]:not(.hidden)'
+        );
+
+        if (!modal) return;
+
+        if (event.key === 'Escape') {
+          closeModal(modal.id);
+          return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusable = Array.from(
+          modal.querySelectorAll(
+            'button:not([disabled]), ' +
+            'input:not([type="hidden"]):not([disabled]), ' +
+            'select:not([disabled]), ' +
+            'a[href], [tabindex="0"]'
+          )
+        ).filter(element => element.getClientRects().length > 0);
+
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            !modal.contains(document.activeElement))
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (
+          !event.shiftKey &&
+          (document.activeElement === last ||
+            !modal.contains(document.activeElement))
+        ) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
