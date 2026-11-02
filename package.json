@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Tableau de bord de paris sportifs et assistant Gemini"
-   "dependencies": {
-    "@google/genai": "latest" 
-   }
+  "description": "Tableau de bord de paris sportifs et assistant Gemini",
+  "dependencies": {
+    "@google/genai": "latest"
+  }
 }
