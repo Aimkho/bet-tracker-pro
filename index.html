@@ -96,7 +96,7 @@
     <!-- App Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Banner Alert Box (Notifications) -->
+        <!-- Banner Alert Box -->
         <div id="statusAlert" class="hidden p-4 rounded-2xl border flex items-center justify-between text-xs font-medium transition-all">
             <span id="statusAlertText"></span>
             <button onclick="hideAlert()" class="text-slate-400 hover:text-white ml-2"><i class="fa-solid fa-xmark"></i></button>
@@ -104,31 +104,25 @@
 
         <!-- ==================== TAB 1: DASHBOARD ==================== -->
         <div id="dashboardSection" class="space-y-6">
-            
             <!-- Key Metrics Grid -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <!-- Bankroll -->
                 <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Capital Actuel</div>
                     <div class="text-2xl font-extrabold text-white mt-1" id="metricCapital">$100.00</div>
                     <div class="text-[11px] text-slate-400 mt-1" id="metricInitialCapital">Départ: $100.00</div>
                 </div>
-                <!-- Profit Total -->
                 <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Profit / Perte</div>
                     <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="metricProfit">+$0.00</div>
-                    <!-- Goal Progress Bar -->
                     <div class="mt-2 w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                         <div id="targetProgressBar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-1.5 rounded-full" style="width: 0%"></div>
                     </div>
                 </div>
-                <!-- ROI / Yield -->
                 <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Yield (ROI)</div>
                     <div class="text-2xl font-extrabold text-blue-400 mt-1" id="metricYield">0.0%</div>
                     <div class="text-[11px] text-slate-400 mt-1" id="metricTotalStaked">Misé: $0.00</div>
                 </div>
-                <!-- Win Rate -->
                 <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Taux de Réussite</div>
                     <div class="text-2xl font-extrabold text-indigo-400 mt-1" id="metricWinRate">0.0%</div>
@@ -187,18 +181,15 @@
                                 <th class="p-3.5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="betsTableBody" class="divide-y divide-slate-800/50 text-xs">
-                            <!-- Filled dynamically -->
-                        </tbody>
+                        <tbody id="betsTableBody" class="divide-y divide-slate-800/50 text-xs"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== TAB 2: AI ASSISTANT & PRONOS ==================== -->
+        <!-- ==================== TAB 2: AI ASSISTANT ==================== -->
         <div id="aiAssistantSection" class="hidden space-y-6">
             
-            <!-- Daily Plan & Goal Tracker Card -->
             <div class="glass-panel p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 border border-indigo-500/20">
                 <div class="flex items-center justify-between flex-wrap gap-4">
                     <div>
@@ -223,7 +214,6 @@
                 </div>
             </div>
 
-            <!-- Match Suggestions Engine -->
             <div class="glass-panel p-6 rounded-2xl space-y-4">
                 <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-4">
                     <div>
@@ -231,7 +221,7 @@
                             <i class="fa-solid fa-robot text-amber-400"></i>
                             Assistant Pronostics Ciblés
                         </h3>
-                        <p class="text-xs text-slate-400">Sélection de matchs optimisés selon vos préférences de jeu (Victoires & Buts)</p>
+                        <p class="text-xs text-slate-400">Sélection de matchs optimisés par IA en direct (H2H, Forme & Cotes du Jour)</p>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -249,9 +239,7 @@
                 </div>
 
                 <!-- Suggestions Grid -->
-                <div id="aiSuggestionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Loaded dynamically -->
-                </div>
+                <div id="aiSuggestionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
         </div>
     </main>
@@ -260,12 +248,10 @@
     <div id="betModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-md rounded-2xl p-6 space-y-4 relative border border-slate-700">
             <button onclick="closeModal('betModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            
             <h3 class="text-base font-bold flex items-center gap-2">
                 <i class="fa-solid fa-ticket text-blue-400"></i>
                 Enregistrer un Pari
             </h3>
-
             <form id="betForm" onsubmit="handleBetSubmit(event)" class="space-y-3.5 text-xs">
                 <input type="hidden" id="betId">
                 <div>
@@ -277,13 +263,10 @@
                         <option value="Combiné">🔥 Paris Combiné (Multiples)</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Affiche du Match / Sélection</label>
-                    <input type="text" id="betMatch" required placeholder="Ex: Real Madrid vs FC Barcelone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                    <input type="text" id="betMatch" required placeholder="Ex: Real Madrid vs FC Barcelone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                 </div>
-
-                <!-- Combiné Odds Helper -->
                 <div id="combineCalcBox" class="hidden p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
                     <label class="block font-semibold text-indigo-300">Calculateur de Cote Combinée</label>
                     <div class="flex gap-2">
@@ -291,26 +274,24 @@
                         <button type="button" onclick="calcCombineOdds()" class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-500">Calculer</button>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Mise ($)</label>
-                        <input type="number" id="betStake" step="0.01" min="0" required placeholder="10.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <input type="number" id="betStake" step="0.01" min="0" required placeholder="10.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Cote Totale</label>
-                        <input type="number" id="betOdds" step="0.01" min="1" required placeholder="1.85" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <input type="number" id="betOdds" step="0.01" min="1" required placeholder="1.85" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Date</label>
-                        <input type="date" id="betDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <input type="date" id="betDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Statut</label>
-                        <select id="betStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <select id="betStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                             <option value="PENDING">En Cours</option>
                             <option value="WON">Gagné</option>
                             <option value="LOST">Perdu</option>
@@ -318,7 +299,6 @@
                         </select>
                     </div>
                 </div>
-
                 <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-bold text-white shadow-lg shadow-blue-600/30 hover:brightness-110 transition">
                     Enregistrer le Pari
                 </button>
@@ -330,23 +310,19 @@
     <div id="configModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative border border-slate-700">
             <button onclick="closeModal('configModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            
             <h3 class="text-base font-bold flex items-center gap-2">
                 <i class="fa-solid fa-sliders text-blue-400"></i>
                 Gestion du Capital & Objectifs
             </h3>
-
             <form id="configForm" onsubmit="handleConfigSubmit(event)" class="space-y-3.5 text-xs">
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Capital de Départ ($)</label>
                     <input type="number" id="cfgInitialCapital" step="0.01" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                 </div>
-
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Mise de Base ($)</label>
                     <input type="number" id="cfgBaseStake" step="0.01" min="0.1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Objectif Gain ($)</label>
@@ -360,7 +336,6 @@
                         </select>
                     </div>
                 </div>
-
                 <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition">
                     Appliquer les Réglages
                 </button>
@@ -368,32 +343,27 @@
         </div>
     </div>
 
-    <!-- Modal: Auth (Supabase) -->
+    <!-- Modal: Auth -->
     <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative border border-slate-700">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            
             <h3 class="text-base font-bold flex items-center gap-2">
                 <i class="fa-solid fa-user-lock text-indigo-400"></i>
                 Compte & Synchronisation
             </h3>
-
             <div class="flex border-b border-slate-800 text-xs font-bold">
                 <button id="authTabLogin" onclick="switchAuthTab('LOGIN')" class="flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500">Se Connecter</button>
                 <button id="authTabSignup" onclick="switchAuthTab('SIGNUP')" class="flex-1 py-2 text-center text-slate-400">S'inscrire</button>
             </div>
-
             <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5 text-xs">
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Adresse Email</label>
                     <input type="email" id="authEmail" required placeholder="nom@exemple.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                 </div>
-
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Mot de passe</label>
                     <input type="password" id="authPassword" required minlength="6" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white">
                 </div>
-
                 <button type="submit" id="authSubmitBtn" class="w-full py-3 rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition">
                     Se Connecter
                 </button>
@@ -403,23 +373,21 @@
 
     <!-- Application Script -->
     <script>
-        // State Management
         let appState = {
             user: null,
             profile: {
                 initialCapital: 100,
                 baseStake: 2.0,
                 targetProfit: 100,
-                targetFreq: 'MONTHLY'
+                targetFreq: 'MONTHLY',
+                geminiApiKey: ''
             },
             bets: [],
             suggestions: []
         };
 
         let chartInstance = null;
-        let authMode = 'LOGIN';
 
-        // Storage & Local Persistence Helpers
         function saveLocalState() {
             try {
                 localStorage.setItem('bet_tracker_state', JSON.stringify({
@@ -444,7 +412,13 @@
             }
         }
 
-        // UI Alert / Notification Handler
+        function saveApiKey() {
+            const val = document.getElementById('geminiApiKey').value.trim();
+            appState.profile.geminiApiKey = val;
+            saveLocalState();
+            showAlert('Clé API enregistrée avec succès !', 'SUCCESS');
+        }
+
         function showAlert(msg, type = 'INFO') {
             const el = document.getElementById('statusAlert');
             const txt = document.getElementById('statusAlertText');
@@ -453,13 +427,9 @@
             txt.textContent = msg;
             el.classList.remove('hidden', 'bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20', 'bg-rose-500/10', 'text-rose-400', 'border-rose-500/20', 'bg-blue-500/10', 'text-blue-400', 'border-blue-500/20');
 
-            if (type === 'SUCCESS') {
-                el.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
-            } else if (type === 'ERROR') {
-                el.classList.add('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
-            } else {
-                el.classList.add('bg-blue-500/10', 'text-blue-400', 'border-blue-500/20');
-            }
+            if (type === 'SUCCESS') el.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+            else if (type === 'ERROR') el.classList.add('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+            else el.classList.add('bg-blue-500/10', 'text-blue-400', 'border-blue-500/20');
             
             setTimeout(() => { hideAlert(); }, 4000);
         }
@@ -469,7 +439,6 @@
             if (el) el.classList.add('hidden');
         }
 
-        // Modal Helpers
         function openModal(id) {
             const el = document.getElementById(id);
             if (!el) return;
@@ -497,7 +466,6 @@
             }
         }
 
-        // Helper Actions
         function addAiBet(matchName, oddsVal) {
             openModal('betModal');
             document.getElementById('betMatch').value = matchName;
@@ -521,7 +489,6 @@
             }
         }
 
-        // Bet Form Handlers
         function handleBetSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('betId').value || 'bet_' + Date.now();
@@ -535,11 +502,8 @@
             const existingIdx = appState.bets.findIndex(b => b.id === id);
             const betObj = { id, sport, match, stake, odds, date, status };
 
-            if (existingIdx >= 0) {
-                appState.bets[existingIdx] = betObj;
-            } else {
-                appState.bets.unshift(betObj);
-            }
+            if (existingIdx >= 0) appState.bets[existingIdx] = betObj;
+            else appState.bets.unshift(betObj);
 
             saveLocalState();
             renderAll();
@@ -550,7 +514,6 @@
         function editBet(id) {
             const bet = appState.bets.find(b => b.id === id);
             if (!bet) return;
-
             document.getElementById('betId').value = bet.id;
             document.getElementById('betSport').value = bet.sport;
             document.getElementById('betMatch').value = bet.match;
@@ -558,7 +521,6 @@
             document.getElementById('betOdds').value = bet.odds;
             document.getElementById('betDate').value = bet.date;
             document.getElementById('betStatus').value = bet.status;
-
             toggleCombineCalc();
             openModal('betModal');
         }
@@ -576,98 +538,47 @@
             appState.profile.baseStake = parseFloat(document.getElementById('cfgBaseStake').value);
             appState.profile.targetProfit = parseFloat(document.getElementById('cfgTargetProfit').value);
             appState.profile.targetFreq = document.getElementById('cfgTargetFreq').value;
-
             saveLocalState();
             renderAll();
             closeModal('configModal');
-            showAlert('Réglages du capital enregistrés !', 'SUCCESS');
+            showAlert('Réglages enregistrés !', 'SUCCESS');
         }
 
-        function switchAuthTab(mode) {
-            authMode = mode;
-            const tLog = document.getElementById('authTabLogin');
-            const tSig = document.getElementById('authTabSignup');
-            const btn = document.getElementById('authSubmitBtn');
-
-            if (mode === 'LOGIN') {
-                tLog.className = "flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500 font-bold";
-                tSig.className = "flex-1 py-2 text-center text-slate-400 font-bold";
-                btn.textContent = "Se Connecter";
-            } else {
-                tSig.className = "flex-1 py-2 text-center text-blue-400 border-b-2 border-blue-500 font-bold";
-                tLog.className = "flex-1 py-2 text-center text-slate-400 font-bold";
-                btn.textContent = "S'Inscrire";
-            }
-        }
-
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            appState.user = { email };
-            
-            // Clean state for fresh user
-            if (authMode === 'SIGNUP') {
-                appState.bets = [];
-                saveLocalState();
-            }
-
-            document.getElementById('authBtnText').textContent = email.split('@')[0];
-            closeModal('authModal');
-            showAlert(`Session activée pour ${email}`, 'SUCCESS');
-            renderAll();
-        }
-
-        // Tab Navigation
         function switchMainTab(tab) {
             const dash = document.getElementById('dashboardSection');
             const ai = document.getElementById('aiAssistantSection');
             const navDash = document.getElementById('navDashboardBtn');
             const navAi = document.getElementById('navAiBtn');
-            const mobDash = document.getElementById('mobNavDashBtn');
-            const mobAi = document.getElementById('mobNavAiBtn');
 
             if (tab === 'DASHBOARD') {
                 dash.classList.remove('hidden');
                 ai.classList.add('hidden');
-                
                 if (navDash) navDash.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-md";
                 if (navAi) navAi.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
-                if (mobDash) mobDash.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg bg-blue-600 text-white flex items-center justify-center gap-1.5";
-                if (mobAi) mobAi.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
-
                 setTimeout(() => updateChart(), 50);
             } else {
                 dash.classList.add('hidden');
                 ai.classList.remove('hidden');
-
                 if (navDash) navDash.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
                 if (navAi) navAi.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
-                if (mobDash) mobDash.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
-                if (mobAi) mobAi.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5";
             }
         }
 
-        // Strict Real-Time Timestamp Filter Helper
         function filterFutureMatches(items) {
             const now = new Date();
             const currentTimestamp = now.getTime();
 
             return items.filter(item => {
                 if (!item.time || !item.time.includes(':')) return false;
-
                 const parts = item.time.split(':').map(p => parseInt(p, 10));
                 if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return false;
 
-                // Build exact match Date object for today in local timezone
                 const matchDate = new Date();
                 matchDate.setHours(parts[0], parts[1], 0, 0);
-
-                // Check if match timestamp is strictly in the future (minimum 5 mins from now)
-                return matchDate.getTime() > (currentTimestamp + 5 * 60 * 1000);
+                return matchDate.getTime() > (currentTimestamp - 10 * 60 * 1000);
             });
         }
 
-        // Render AI Suggestions Cards
         function renderAiSuggestions() {
             const grid = document.getElementById('aiSuggestionsGrid');
             const filterEl = document.getElementById('pronoFilter');
@@ -675,7 +586,6 @@
             if (!grid) return;
 
             grid.innerHTML = '';
-
             const validList = filterFutureMatches(appState.suggestions);
             const list = validList.filter(s => filter === 'ALL' || s.type === filter);
 
@@ -683,8 +593,7 @@
                 grid.innerHTML = `
                     <div class="col-span-full p-8 text-center glass-panel rounded-2xl space-y-3 border border-amber-500/20">
                         <i class="fa-solid fa-clock-rotate-left text-amber-400 text-3xl"></i>
-                        <h4 class="font-bold text-white text-sm">Aucun match à venir disponible aujourd'hui à cette heure.</h4>
-                        <p class="text-xs text-slate-400">Tous les matchs présélectionnés aujourd'hui sont déjà terminés ou en cours. Cliquez sur "Actualiser les Matchs" pour rechercher les prochaines rencontres à venir.</p>
+                        <h4 class="font-bold text-white text-sm">Cliquez sur "Actualiser les Matchs" pour rechercher les prochaines rencontres en direct.</h4>
                     </div>
                 `;
                 return;
@@ -714,7 +623,7 @@
                         </div>
                         <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
                             <div class="font-bold text-amber-400">${item.selection} <span class="text-white">@${item.odds}</span></div>
-                            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${item.tip || 'Analyse tactique et statistique effectuée.'}</p>
+                            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${item.tip || 'Analyse statistique effectuée.'}</p>
                         </div>
                     </div>
                     <button onclick="addAiBet('${safeMatchName}', ${item.odds})" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition border border-slate-700 flex items-center justify-center gap-2">
@@ -725,7 +634,6 @@
             });
         }
 
-        // Render All Dashboard Components
         function renderAll() {
             computeMetrics();
             renderBetsTable();
@@ -734,7 +642,6 @@
             renderAiSuggestions();
         }
 
-        // Metrics Computation
         function computeMetrics() {
             let totalProfit = 0;
             let totalStaked = 0;
@@ -759,9 +666,7 @@
             const winRate = settledBets > 0 ? (wonBets / settledBets) * 100 : 0;
 
             const capEl = document.getElementById('metricCapital');
-            const initEl = document.getElementById('metricInitialCapital');
             if (capEl) capEl.textContent = `$${currentCapital.toFixed(2)}`;
-            if (initEl) initEl.textContent = `Départ: $${appState.profile.initialCapital.toFixed(2)}`;
             
             const profEl = document.getElementById('metricProfit');
             if (profEl) {
@@ -770,45 +675,23 @@
             }
 
             const yieldEl = document.getElementById('metricYield');
-            const stakedEl = document.getElementById('metricTotalStaked');
             if (yieldEl) yieldEl.textContent = `${yieldVal.toFixed(1)}%`;
-            if (stakedEl) stakedEl.textContent = `Misé: $${totalStaked.toFixed(2)}`;
             
             const winRateEl = document.getElementById('metricWinRate');
-            const countsEl = document.getElementById('metricBetCounts');
             if (winRateEl) winRateEl.textContent = `${winRate.toFixed(1)}%`;
-            if (countsEl) countsEl.textContent = `${wonBets} Gagnés / ${settledBets} Terminés`;
-
-            // Goal Progress bar calculation
-            const pct = Math.min(Math.max((totalProfit / appState.profile.targetProfit) * 100, 0), 100);
-            const barEl = document.getElementById('targetProgressBar');
-            if (barEl) barEl.style.width = `${pct}%`;
         }
 
-        // Render Bets Table
         function renderBetsTable() {
             const tbody = document.getElementById('betsTableBody');
-            const filterSportEl = document.getElementById('filterSport');
-            const filterStatusEl = document.getElementById('filterStatus');
             if (!tbody) return;
-
-            const filterSport = filterSportEl ? filterSportEl.value : 'ALL';
-            const filterStatus = filterStatusEl ? filterStatusEl.value : 'ALL';
-
             tbody.innerHTML = '';
 
-            const filtered = appState.bets.filter(b => {
-                const sMatch = filterSport === 'ALL' || b.sport === filterSport;
-                const stMatch = filterStatus === 'ALL' || b.status === filterStatus;
-                return sMatch && stMatch;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucun pari enregistré pour le moment.</td></tr>`;
+            if (appState.bets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Aucun pari enregistré.</td></tr>`;
                 return;
             }
 
-            filtered.forEach(b => {
+            appState.bets.forEach(b => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-900/40 transition border-b border-slate-800/40';
 
@@ -816,14 +699,12 @@
                 if (b.status === 'WON') statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">GAGNÉ</span>`;
                 if (b.status === 'LOST') statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">PERDU</span>`;
 
-                const winPot = (b.stake * b.odds).toFixed(2);
-
                 tr.innerHTML = `
                     <td class="p-3.5 text-slate-400">${b.date}</td>
                     <td class="p-3.5 font-semibold text-white">${b.match} <span class="text-[10px] text-slate-400 block font-normal">${b.sport}</span></td>
                     <td class="p-3.5 font-bold text-slate-200">$${b.stake.toFixed(2)}</td>
                     <td class="p-3.5 font-bold text-amber-400">@${b.odds.toFixed(2)}</td>
-                    <td class="p-3.5 text-emerald-400 font-semibold">$${winPot}</td>
+                    <td class="p-3.5 text-emerald-400 font-semibold">$${(b.stake * b.odds).toFixed(2)}</td>
                     <td class="p-3.5">${statusBadge}</td>
                     <td class="p-3.5 text-right space-x-1">
                         <button onclick="editBet('${b.id}')" class="p-1.5 text-slate-400 hover:text-white"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -834,7 +715,6 @@
             });
         }
 
-        // Initialize Chart
         function initChart() {
             const canvas = document.getElementById('bankrollChart');
             if (!canvas) return;
@@ -865,10 +745,8 @@
             });
         }
 
-        // Update Chart Data
         function updateChart() {
             if (!chartInstance) return;
-
             let current = appState.profile.initialCapital;
             const labels = ['Départ'];
             const points = [current];
@@ -885,16 +763,13 @@
             chartInstance.update();
         }
 
-        // AI Assistant Planner
         function updateAiPlanner() {
             const todayStr = new Date().toISOString().split('T')[0];
             const todayBets = appState.bets.filter(b => b.date === todayStr).length;
-
             const el = document.getElementById('aiDailyBetsCount');
             if (el) el.textContent = `${todayBets} / 2`;
         }
 
-        // Real-Time Gemini AI Match Suggestions Generator
         async function generateAiSuggestions() {
             const grid = document.getElementById('aiSuggestionsGrid');
             if (!grid) return;
@@ -904,102 +779,33 @@
                     <div class="inline-block animate-spin text-amber-400 text-3xl mb-2">
                         <i class="fa-solid fa-brain"></i>
                     </div>
-                    <h4 class="font-bold text-white text-sm">Interrogation de l'IA & Recherche des Vrais Matchs du Jour...</h4>
-                    <p class="text-xs text-slate-400">Analyse de la forme récente, des duels passés (H2H) et filtrage des heures de coup d'envoi en direct.</p>
+                    <h4 class="font-bold text-white text-sm">Analyse des Matchs du Jour par l'IA en temps réel...</h4>
+                    <p class="text-xs text-slate-400">Recherche H2H, forme récente et filtrage des heures de coup d'envoi...</p>
                 </div>
             `;
 
-            // Horodatage dynamique exact du navigateur (Date + Heure)
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false });
-            
-            const systemPrompt = `Tu es un expert mondial en paris sportifs et analyse de données de football, basketball et tennis.
-Ton rôle est d'effectuer une recherche sur le Web pour trouver les vraies rencontres sportives réelles prévues AUJOURD'HUI (${dateStr}) DONT LE COUP D'ENVOI EST STRICTEMENT APRÈS L'HEURE ACTUELLE : ${timeStr}.
-
-CONSIGNES STRICTES :
-1. Recherche uniquement des matchs réels de ce jour dont l'heure de début est supérieure à ${timeStr}. Ignore les matchs reportés ou déjà commencés/terminés.
-2. Pour chaque match, analyse :
-   - Les résultats récents et la forme actuelle des 2 équipes sur leurs 5 derniers matchs.
-   - L'historique des duels passés directs (Head-to-Head / H2H).
-3. Renvoie STRICTEMENT et UNIQUEMENT un tableau JSON valide (pas de texte explicatif avant ou après) contenant entre 3 et 6 opportunités de paris (Victoires 1N2 ou Marchés des Buts Over/Under/BTTS).
-
-Format JSON attendu :
-[
-  {
-    "type": "GOALS",
-    "league": "Premier League",
-    "match": "Équipe A vs Équipe B",
-    "time": "HH:MM",
-    "selection": "Plus de 2.5 Buts",
-    "odds": 1.75,
-    "confidence": "85%",
-    "tip": "Résumé clair de l'analyse H2H et de la forme récente des 2 équipes."
-  }
-]`;
-
-            const userQuery = `Trouve les vrais matchs d'aujourd'hui (${dateStr}) prévus après ${timeStr} avec leurs cotes et analyses H2H. Fournis uniquement le JSON.`;
-
             try {
-                // Endpoint Gemini avec Google Search Grounding (Optimisé Vercel/Web)
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                // Appel vers notre Serverless Function Vercel
+                const response = await fetch('/api/pronos');
 
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    tools: [{ "google_search": {} }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] }
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) throw new Error(`Erreur API (${response.status})`);
-
-                const result = await response.json();
-                const candidate = result.candidates?.[0];
-                let rawJsonText = candidate?.content?.parts?.[0]?.text || "";
-
-                if (!rawJsonText) throw new Error("Aucune donnée retournée par l'IA.");
-
-                // Nettoyage Markdown JSON
-                rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-                let parsedProposals = JSON.parse(rawJsonText);
-                if (!Array.isArray(parsedProposals)) {
-                    if (parsedProposals.suggestions) parsedProposals = parsedProposals.suggestions;
-                    else if (parsedProposals.matches) parsedProposals = parsedProposals.matches;
-                    else if (parsedProposals.data) parsedProposals = parsedProposals.data;
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || `Erreur HTTP ${response.status}`);
                 }
 
-                if (!Array.isArray(parsedProposals) || parsedProposals.length === 0) {
-                    throw new Error("Aucun match disponible.");
-                }
+                const parsed = await response.json();
 
-                // Filtrage JS strict post-recherche
-                appState.suggestions = filterFutureMatches(parsedProposals);
+                appState.suggestions = filterFutureMatches(parsed);
                 renderAiSuggestions();
+                showAlert("Pronostics mis à jour en direct !", "SUCCESS");
 
             } catch (err) {
-                console.error("Erreur Gemini AI Grounding:", err);
-                
-                grid.innerHTML = `
-                    <div class="col-span-full p-6 text-center glass-panel rounded-2xl space-y-3 border border-rose-500/20">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-400 text-3xl"></i>
-                        <h4 class="font-bold text-white text-sm">Connexion à l'Assistant IA</h4>
-                        <p class="text-xs text-slate-400">Cliquez ci-dessous pour lancer ou relancer la recherche en direct sur les serveurs Vercel.</p>
-                        <button onclick="generateAiSuggestions()" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition">
-                            <i class="fa-solid fa-rotate"></i> Lancer la recherche IA
-                        </button>
-                    </div>
-                `;
+                console.error("Erreur IA Serverless:", err);
+                showAlert("Erreur lors de la recherche IA. Assurez-vous d'avoir ajouté GEMINI_API_KEY sur Vercel.", "ERROR");
+                renderAiSuggestions();
             }
         }
 
-        // Init App on Window Load
         window.onload = function() {
             loadLocalData();
             initChart();
