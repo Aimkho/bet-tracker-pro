@@ -2,1677 +2,209 @@
 <html lang="fr" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>BetTracker PRO — Capital, paris et assistant IA</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#020617">
+  <title>BetTracker PRO</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            dark: {
-              bg: '#0f172a',
-              card: '#1e293b',
-              border: '#334155'
-            }
-          }
-        }
-      }
-    };
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>tailwind.config={darkMode:'class'};</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  >
-
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-  >
-
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.78);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      outline: 2px solid #3b82f6;
-      outline-offset: 2px;
-    }
-
-    .field {
-      width: 100%;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 0.75rem;
-      padding: 0.7rem 0.8rem;
-      color: white;
-    }
-
-    .field-label {
-      display: block;
-      margin-bottom: 0.35rem;
-      font-weight: 600;
-      color: #cbd5e1;
-    }
+    :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:#020617;color:#f1f5f9}button,input,select,textarea{font:inherit}
+    button{touch-action:manipulation;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+    button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #60a5fa;outline-offset:3px}
+    .panel{background:#172234;border:1px solid #29364a;border-radius:18px}
+    .field{width:100%;min-width:0;min-height:46px;background:#0f172a;border:1px solid #475569;border-radius:12px;padding:11px 12px;color:#f8fafc;font-size:16px}
+    .field:focus{outline:2px solid #3b82f6;outline-offset:2px}.label{display:block;color:#cbd5e1;font-size:13px;font-weight:600;margin-bottom:7px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:700;border:1px solid transparent;line-height:1.35}
+    .primary{background:#2563eb;color:white}.primary:hover{background:#3b82f6}.secondary{background:#253247;border-color:#3b4a60;color:#e2e8f0}.secondary:hover{background:#334155}
+    .amber{background:#f59e0b;color:#0f172a}.amber:hover{background:#fbbf24}.danger{background:#7f1d1d;color:#fecaca}.soft{background:#312e81;color:#e0e7ff;border-color:#4f46e5}
+    .tab{min-height:44px;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;color:#94a3b8}.tab.active{background:#2563eb;color:white}.tab.ai.active{background:#f59e0b;color:#0f172a}
+    .modal{position:fixed;inset:0;z-index:60;background:rgba(2,6,23,.85);backdrop-filter:blur(6px);padding:16px;display:flex;align-items:center;justify-content:center}
+    .modal.hidden{display:none}.dialog{width:100%;max-height:calc(100dvh - 32px);overflow:auto;padding:24px;overscroll-behavior:contain}
+    .break-any{overflow-wrap:anywhere}.metric{font-size:clamp(1.25rem,3vw,1.9rem);font-weight:800;line-height:1.3}
+    .bet-table{border-collapse:collapse;width:100%;font-size:13px}.bet-table th{text-align:left;font-size:11px;text-transform:uppercase;color:#94a3b8;background:#0f172a;padding:14px 12px}.bet-table td{padding:14px 12px;border-top:1px solid #29364a;vertical-align:top}
+    .bet-table .right{text-align:right}.badge{display:inline-block;border-radius:8px;padding:5px 8px;font-size:11px;white-space:nowrap}.badge.pending{background:#78350f55;color:#fcd34d}.badge.won{background:#064e3b66;color:#6ee7b7}.badge.lost{background:#88133755;color:#fda4af}
+    .notes{white-space:pre-wrap;overflow-wrap:anywhere;color:#94a3b8;font-size:12px;line-height:1.6;margin-top:10px}
+    .ai-card{display:flex;flex-direction:column;gap:16px;min-width:0;padding:18px}.ai-analysis{background:#0f172a;border:1px solid #26344a;border-radius:12px;padding:12px;font-size:13px;color:#cbd5e1;line-height:1.65;overflow-wrap:anywhere}
+    @media(max-width:767px){.bet-table thead{display:none}.bet-table,.bet-table tbody,.bet-table tr,.bet-table td{display:block;width:100%}.bet-table tr{padding:14px;border-top:1px solid #334155}.bet-table td{border:0;padding:6px 0;display:grid;grid-template-columns:95px minmax(0,1fr);gap:10px;text-align:left!important}.bet-table td::before{content:attr(data-label);color:#94a3b8;font-size:11px;padding-top:3px}.bet-table td.empty{display:block}.bet-table td.empty::before{display:none}.dialog{padding:20px}.ai-card{padding:16px}}
+    @media(max-width:380px){.modal{padding:8px}.dialog{padding:16px;max-height:calc(100dvh - 16px)}.btn{padding:10px;font-size:12px}.bet-table td{grid-template-columns:82px minmax(0,1fr)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important}}
   </style>
 </head>
-
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-
-  <!-- NAVIGATION -->
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-      <div class="h-16 flex items-center justify-between gap-3">
-
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center">
-            <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-          </div>
-
-          <div>
-            <h1 class="font-bold">
-              BetTracker
-              <span class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
-                PRO
-              </span>
-            </h1>
-
-            <p class="hidden sm:block text-[11px] text-slate-400">
-              Capital, journal de paris et analyses IA
-            </p>
-          </div>
-        </div>
-
-        <nav class="hidden md:flex bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-          <button
-            type="button"
-            id="navDashboardBtn"
-            onclick="switchMainTab('DASHBOARD')"
-            class="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600"
-          >
-            Tableau de bord
-          </button>
-
-          <button
-            type="button"
-            id="navAiBtn"
-            onclick="switchMainTab('AI')"
-            class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400"
-          >
-            Assistant IA
-          </button>
-        </nav>
-
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            onclick="openNewBet()"
-            class="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600"
-          >
-            <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            <span class="hidden sm:inline ml-1">Nouveau pari</span>
-          </button>
-
-          <button
-            type="button"
-            onclick="openConfig()"
-            class="p-2 rounded-xl bg-slate-800 border border-slate-700"
-            aria-label="Réglages du capital"
-          >
-            <i class="fa-solid fa-gear" aria-hidden="true"></i>
-          </button>
-
-          <button
-            type="button"
-            onclick="openModal('authModal')"
-            class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs flex items-center gap-2"
-          >
-            <i class="fa-solid fa-user" aria-hidden="true"></i>
-            <span id="authBtnText" class="max-w-28 truncate">Connexion</span>
-          </button>
-        </div>
-      </div>
+<body class="min-h-screen flex flex-col">
+<header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-blue-600 text-xl font-bold shrink-0" aria-hidden="true">↗</div>
+      <div><h1 class="font-extrabold text-base sm:text-lg">BetTracker <span class="text-xs text-blue-300 bg-blue-500/10 rounded px-1.5 py-1">PRO</span></h1><p class="hidden sm:block text-xs text-slate-400">Capital, paris et analyses IA</p></div>
     </div>
-
-    <nav class="md:hidden flex gap-2 px-4 py-2 border-t border-slate-800">
-      <button
-        type="button"
-        id="mobNavDashBtn"
-        onclick="switchMainTab('DASHBOARD')"
-        class="flex-1 py-2 rounded-lg text-xs font-bold bg-blue-600"
-      >
-        Tableau de bord
-      </button>
-
-      <button
-        type="button"
-        id="mobNavAiBtn"
-        onclick="switchMainTab('AI')"
-        class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-400"
-      >
-        Assistant IA
-      </button>
-    </nav>
-  </header>
-
-  <!-- CONTENU -->
-  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <div id="statusAlert" class="hidden" role="status" aria-live="polite">
-      <span id="statusAlertText"></span>
-
-      <button
-        type="button"
-        onclick="hideAlert()"
-        class="ml-3 p-1"
-        aria-label="Fermer le message"
-      >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-    </div>
-
-    <div class="glass-panel rounded-xl p-4 flex items-center justify-between gap-3">
-      <p id="connectionStatus" class="text-xs text-slate-400">
-        Initialisation de la connexion…
-      </p>
-
-      <button
-        type="button"
-        id="reloadDataBtn"
-        onclick="refreshUserData()"
-        class="hidden text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap"
-      >
-        <i class="fa-solid fa-rotate mr-1" aria-hidden="true"></i>
-        Recharger
-      </button>
-    </div>
-
-    <!-- TABLEAU DE BORD -->
-    <section id="dashboardSection" class="space-y-6">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-        <div class="glass-panel rounded-2xl p-4">
-          <p class="text-[11px] uppercase text-slate-400 font-semibold">
-            Capital actuel
-          </p>
-          <p id="metricCapital" class="text-2xl font-extrabold mt-1">—</p>
-          <p id="metricInitialCapital" class="text-[11px] text-slate-400 mt-1">
-            Départ : —
-          </p>
-          <p id="metricAvailableCapital" class="text-[11px] text-slate-400 mt-1">
-            Disponible : —
-          </p>
-        </div>
-
-        <div class="glass-panel rounded-2xl p-4">
-          <p class="text-[11px] uppercase text-slate-400 font-semibold">
-            Profit / perte
-          </p>
-          <p id="metricProfit" class="text-2xl font-extrabold mt-1">—</p>
-        </div>
-
-        <div class="glass-panel rounded-2xl p-4">
-          <p class="text-[11px] uppercase text-slate-400 font-semibold">
-            Rendement des mises
-          </p>
-          <p id="metricYield" class="text-2xl font-extrabold text-blue-400 mt-1">—</p>
-          <p class="text-[10px] text-slate-500 mt-1">Sur les paris réglés</p>
-        </div>
-
-        <div class="glass-panel rounded-2xl p-4">
-          <p class="text-[11px] uppercase text-slate-400 font-semibold">
-            Taux de réussite
-          </p>
-          <p id="metricWinRate" class="text-2xl font-extrabold text-indigo-400 mt-1">—</p>
-        </div>
-      </div>
-
-      <div class="glass-panel rounded-2xl p-5">
-        <h2 class="text-sm font-bold mb-4">
-          <i class="fa-solid fa-chart-area text-blue-400 mr-2" aria-hidden="true"></i>
-          Évolution du capital
-        </h2>
-
-        <div class="h-64">
-          <canvas id="bankrollChart" aria-label="Évolution du capital" role="img"></canvas>
-        </div>
-
-        <p id="chartError" class="hidden text-xs text-amber-300 mt-2">
-          Le graphique n’a pas pu être chargé.
-        </p>
-      </div>
-
-      <div class="glass-panel rounded-2xl overflow-hidden">
-        <div class="p-4 border-b border-slate-800">
-          <h2 class="text-sm font-bold">
-            <i class="fa-solid fa-list-check text-indigo-400 mr-2" aria-hidden="true"></i>
-            Journal de vos paris
-          </h2>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900/60 text-slate-400 uppercase text-[11px]">
-              <tr>
-                <th scope="col" class="p-3">Date</th>
-                <th scope="col" class="p-3">Sport et sélection</th>
-                <th scope="col" class="p-3">Mise</th>
-                <th scope="col" class="p-3">Cote</th>
-                <th scope="col" class="p-3">Retour potentiel</th>
-                <th scope="col" class="p-3">Statut</th>
-                <th scope="col" class="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="betsTableBody" class="divide-y divide-slate-800"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ASSISTANT IA -->
-    <section id="aiAssistantSection" class="hidden">
-      <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4">
-        <div class="flex items-center justify-between flex-wrap gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <h2 class="font-bold">
-              <i class="fa-solid fa-robot text-amber-400 mr-2" aria-hidden="true"></i>
-              Assistant d’analyses football
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">
-              Recherche et analyse via Vercel et Gemini
-            </p>
-          </div>
-
-          <button
-            type="button"
-            id="refreshAiBtn"
-            onclick="generateAiSuggestions()"
-            class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950"
-          >
-            Actualiser les matchs
-          </button>
-        </div>
-
-        <p class="text-[11px] text-amber-200 bg-amber-500/5 border border-amber-500/20 p-3 rounded-xl leading-relaxed">
-          Analyses indicatives, sans garantie de gain.
-          Une recherche Web ne constitue pas un flux de scores en direct.
-          Vérifiez les dates, les horaires et les cotes.
-        </p>
-
-        <div
-          id="aiSuggestionsGrid"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          aria-live="polite"
-          aria-busy="false"
-        >
-          <p class="col-span-full py-10 text-center text-sm text-slate-400">
-            Cliquez sur « Actualiser les matchs » pour lancer la recherche.
-          </p>
-        </div>
-
-        <p id="aiLastUpdate" class="hidden text-[11px] text-slate-400"></p>
-      </div>
-    </section>
-  </main>
-
-  <!-- FORMULAIRE CONNEXION / INSCRIPTION -->
-  <div
-    id="authModal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="authModalTitle"
-    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-  >
-    <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative my-auto">
-      <button
-        type="button"
-        onclick="closeModal('authModal')"
-        class="absolute top-4 right-4 text-slate-400"
-        aria-label="Fermer"
-      >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-
-      <h2 id="authModalTitle" class="font-bold text-base">Connexion</h2>
-
-      <div id="authGuestPanel" class="space-y-4">
-        <div class="flex text-xs font-bold border-b border-slate-700">
-          <button
-            type="button"
-            id="authTabLogin"
-            onclick="switchAuthTab('LOGIN')"
-            class="flex-1 py-2 border-b-2 border-blue-500 text-blue-400"
-          >
-            Se connecter
-          </button>
-
-          <button
-            type="button"
-            id="authTabSignup"
-            onclick="switchAuthTab('SIGNUP')"
-            class="flex-1 py-2 text-slate-400"
-          >
-            S’inscrire
-          </button>
-        </div>
-
-        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4 text-xs">
-          <div>
-            <label for="authEmail" class="field-label">Adresse e-mail</label>
-            <input
-              id="authEmail"
-              type="email"
-              class="field"
-              required
-              maxlength="254"
-              autocomplete="email"
-              placeholder="nom@exemple.com"
-            >
-          </div>
-
-          <div>
-            <label for="authPassword" class="field-label">Mot de passe</label>
-            <input
-              id="authPassword"
-              type="password"
-              class="field"
-              required
-              autocomplete="current-password"
-              placeholder="Votre mot de passe"
-            >
-          </div>
-
-          <p id="signupHelp" class="hidden text-[11px] text-slate-400 leading-relaxed">
-            Utilisez au moins 8 caractères. Une confirmation par e-mail
-            peut être nécessaire selon les paramètres du projet.
-          </p>
-
-          <button
-            id="authSubmitBtn"
-            type="submit"
-            class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold"
-          >
-            Se connecter
-          </button>
-        </form>
-      </div>
-
-      <div id="authAccountPanel" class="hidden space-y-4">
-        <div class="bg-slate-900/60 rounded-xl p-3">
-          <p class="text-xs text-slate-400 mb-1">Compte connecté</p>
-          <p id="accountEmail" class="text-sm break-all"></p>
-        </div>
-
-        <p class="text-xs text-slate-400">
-          Votre capital et vos paris sont enregistrés dans Supabase.
-        </p>
-
-        <button
-          id="logoutBtn"
-          type="button"
-          onclick="handleLogout()"
-          class="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold"
-        >
-          Se déconnecter
-        </button>
-      </div>
-
-      <p id="authMessage" class="hidden text-xs p-3 rounded-xl leading-relaxed" role="status"></p>
-    </div>
+    <nav class="hidden lg:flex gap-1 bg-slate-950/60 p-1 rounded-xl" aria-label="Navigation principale"><button class="tab active" data-tab="DASHBOARD" type="button">Tableau de bord</button><button class="tab ai" data-tab="AI" type="button">Assistant IA</button></nav>
+    <div class="flex items-center gap-2"><button id="newBetBtn" class="btn primary" type="button"><span aria-hidden="true">+</span><span class="hidden sm:inline">Nouveau pari</span><span class="sr-only sm:hidden">Nouveau pari</span></button><button id="configBtn" class="btn secondary" type="button" aria-label="Réglages du capital">⚙</button><button id="accountBtn" class="btn secondary min-w-0" type="button"><span id="authBtnText" class="max-w-24 sm:max-w-36 truncate">Connexion</span></button></div>
   </div>
-
-  <!-- FORMULAIRE PARI -->
-  <div
-    id="betModal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="betModalTitle"
-    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-  >
-    <div class="glass-panel w-full max-w-md rounded-2xl p-6 space-y-4 relative my-auto">
-      <button
-        type="button"
-        onclick="closeModal('betModal')"
-        class="absolute top-4 right-4 text-slate-400"
-        aria-label="Fermer"
-      >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-
-      <h2 id="betModalTitle" class="font-bold">Enregistrer un pari</h2>
-
-      <form id="betForm" onsubmit="handleBetSubmit(event)" class="space-y-3 text-xs">
-        <input id="betId" type="hidden">
-
-        <div>
-          <label for="betSport" class="field-label">Sport / type de pari</label>
-          <select id="betSport" class="field">
-            <option value="Football">Football</option>
-            <option value="Basketball">Basketball</option>
-            <option value="Tennis">Tennis</option>
-            <option value="Combiné">Combiné</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="betMatch" class="field-label">Match / sélection</label>
-          <input
-            id="betMatch"
-            type="text"
-            class="field"
-            required
-            maxlength="250"
-            placeholder="Ex. : Équipe A vs Équipe B — sélection"
-          >
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="betStake" class="field-label">Mise ($)</label>
-            <input id="betStake" type="number" min="0.01" step="0.01" class="field" required>
-          </div>
-
-          <div>
-            <label for="betOdds" class="field-label">Cote</label>
-            <input id="betOdds" type="number" min="1" step="0.01" class="field" required>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="betDate" class="field-label">Date</label>
-            <input id="betDate" type="date" class="field" required>
-          </div>
-
-          <div>
-            <label for="betStatus" class="field-label">Statut</label>
-            <select id="betStatus" class="field">
-              <option value="PENDING">En cours</option>
-              <option value="WON">Gagné</option>
-              <option value="LOST">Perdu</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label for="betNotes" class="field-label">Notes facultatives</label>
-          <textarea id="betNotes" class="field" rows="3" maxlength="2000"></textarea>
-        </div>
-
-        <button
-          id="betSubmitBtn"
-          type="submit"
-          class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-bold"
-        >
-          Enregistrer le pari
-        </button>
-      </form>
+  <nav class="lg:hidden grid grid-cols-2 gap-2 border-t border-slate-800 px-3 py-2" aria-label="Navigation mobile"><button class="tab active" data-tab="DASHBOARD" type="button">Tableau de bord</button><button class="tab ai" data-tab="AI" type="button">Assistant IA</button></nav>
+</header>
+<main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+  <div id="statusAlert" class="hidden" role="status" aria-live="polite"><span id="statusAlertText" class="break-any"></span><button id="hideAlertBtn" class="btn shrink-0" type="button" aria-label="Fermer le message">×</button></div>
+  <div class="panel p-3 sm:p-4 flex items-center justify-between gap-3"><p id="connectionStatus" class="text-xs text-slate-400 break-any">Initialisation…</p><button id="reloadDataBtn" class="hidden btn secondary shrink-0" type="button">Recharger</button></div>
+  <section id="dashboardSection" class="space-y-4 sm:space-y-6" aria-label="Tableau de bord">
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div class="panel p-3 sm:p-5 min-w-0"><p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">Capital actuel</p><p id="metricCapital" class="metric mt-2 break-any">—</p><p id="metricInitialCapital" class="text-[11px] text-slate-400 mt-2 break-any">Départ : —</p><p id="metricAvailableCapital" class="text-[11px] text-slate-400 mt-1 break-any">Disponible : —</p></div>
+      <div class="panel p-3 sm:p-5 min-w-0"><p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">Profit / perte</p><p id="metricProfit" class="metric mt-2 break-any">—</p></div>
+      <div class="panel p-3 sm:p-5 min-w-0"><p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">Rendement des mises</p><p id="metricYield" class="metric mt-2 text-blue-400 break-any">—</p><p class="text-[11px] text-slate-500 mt-2">Sur les paris réglés</p></div>
+      <div class="panel p-3 sm:p-5 min-w-0"><p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">Taux de réussite</p><p id="metricWinRate" class="metric mt-2 text-indigo-400">—</p></div>
     </div>
-  </div>
-
-  <!-- FORMULAIRE CAPITAL -->
-  <div
-    id="configModal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="configModalTitle"
-    class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
-  >
-    <div class="glass-panel w-full max-w-sm rounded-2xl p-6 space-y-4 relative">
-      <button
-        type="button"
-        onclick="closeModal('configModal')"
-        class="absolute top-4 right-4 text-slate-400"
-        aria-label="Fermer"
-      >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-
-      <h2 id="configModalTitle" class="font-bold">Réglages du capital</h2>
-
-      <form onsubmit="handleConfigSubmit(event)" class="space-y-4 text-xs">
-        <div>
-          <label for="configInitialCapital" class="field-label">Capital initial ($)</label>
-          <input
-            id="configInitialCapital"
-            type="number"
-            min="0.01"
-            step="0.01"
-            class="field"
-            required
-          >
-        </div>
-
-        <button id="configSubmitBtn" type="submit" class="w-full py-3 rounded-xl bg-blue-600 font-bold">
-          Enregistrer
-        </button>
-      </form>
+    <div class="panel p-4 sm:p-5"><h2 class="text-sm font-bold mb-4">Évolution du capital</h2><div class="h-52 sm:h-64 lg:h-72"><canvas id="bankrollChart" role="img" aria-label="Évolution du capital"></canvas></div><p id="chartError" class="hidden text-xs text-amber-300 mt-3">Graphique indisponible.</p><p class="text-[11px] text-slate-500 mt-3">Reconstitution des paris réglés selon leur date renseignée.</p></div>
+    <div class="panel overflow-hidden"><div class="p-4 sm:p-5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2"><h2 class="text-sm font-bold">Journal de vos paris</h2><p id="betCount" class="text-xs text-slate-400"></p></div><table class="bet-table"><thead><tr><th scope="col">Date</th><th scope="col">Sport et sélection</th><th scope="col">Mise</th><th scope="col">Cote</th><th scope="col">Retour potentiel</th><th scope="col">Statut</th><th scope="col" class="right">Actions</th></tr></thead><tbody id="betsTableBody"></tbody></table></div>
+  </section>
+  <section id="aiAssistantSection" class="hidden space-y-4 sm:space-y-6" aria-label="Assistant IA">
+    <div class="panel p-4 sm:p-6 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-700 pb-4"><div><h2 class="font-bold text-base sm:text-lg">Assistant d’analyses football</h2><p class="text-xs text-slate-400 mt-1 leading-relaxed">Objectif : 6 à 8 rencontres vérifiables, dans différentes compétitions.</p></div><button id="refreshAiBtn" class="btn amber w-full sm:w-auto shrink-0" type="button">Actualiser les matchs</button></div>
+      <p class="text-xs text-amber-200 bg-amber-500/5 border border-amber-500/20 p-3 rounded-xl leading-relaxed">Aucune sélection n’est garantie. Une cote plus élevée ne signifie pas davantage de chances de gagner. Vérifiez les cotes chez votre bookmaker. Un combiné ajoute des conditions à remplir ; le journal ne place aucun pari.</p>
+      <div id="aiSuggestionsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4" aria-live="polite" aria-busy="false"><p class="col-span-full text-center text-sm text-slate-400 py-8">Connectez-vous, puis lancez une recherche.</p></div>
+      <p id="aiLastUpdate" class="hidden text-[11px] text-slate-400 leading-relaxed"></p>
+      <div id="searchSources" class="hidden text-xs border-t border-slate-700 pt-4"><h3 class="font-semibold text-slate-300 mb-2">Sources de la recherche globale</h3><ul id="sourceList" class="space-y-2 break-any"></ul><p class="text-[11px] text-slate-500 mt-3">Ces liens proviennent de la réponse de recherche ; ils ne constituent pas une validation indépendante de chaque pronostic ou cote.</p></div>
     </div>
+    <div id="comboPanel" class="hidden panel p-4 sm:p-6 space-y-4">
+      <div><h2 class="font-bold text-blue-300">Mon combiné en préparation</h2><p class="text-xs text-slate-400 mt-2 leading-relaxed">Vérifiez les sélections et leurs cotes. Une seule sélection par rencontre. Ce panier provisoire n’est pas encore enregistré.</p></div>
+      <div id="comboItems" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div><p id="comboTotal" class="text-sm font-bold text-amber-300 break-any"></p>
+      <p class="text-xs text-slate-400 leading-relaxed">Le produit des cotes est indicatif. La cote finale, les restrictions et les règles de règlement doivent être vérifiées chez votre bookmaker. Aucune probabilité de réussite n’est calculée.</p>
+      <div class="grid grid-cols-1 sm:flex gap-3"><button id="prepareComboBtn" class="btn primary" type="button">Préparer l’enregistrement du combiné</button><button id="clearComboBtn" class="btn secondary" type="button">Vider le combiné</button></div>
+    </div>
+  </section>
+</main>
+<footer class="max-w-7xl mx-auto w-full px-4 pb-6 pt-2 text-center text-[11px] text-slate-500 leading-relaxed">Données enregistrées dans Supabase. Analyses indicatives, sans garantie de gain.</footer>
+
+<!-- AUTHENTIFICATION -->
+<div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="authModalTitle"><div class="dialog panel max-w-sm">
+  <div class="flex items-center justify-between gap-3 mb-5"><h2 id="authModalTitle" class="font-bold text-lg">Connexion</h2><button class="btn secondary" type="button" data-close="authModal" aria-label="Fermer">×</button></div>
+  <div id="authGuestPanel" class="space-y-5"><div class="grid grid-cols-2 gap-2"><button id="authTabLogin" class="btn primary" type="button">Se connecter</button><button id="authTabSignup" class="btn secondary" type="button">S’inscrire</button></div>
+    <form id="authForm" class="space-y-4"><div><label class="label" for="authEmail">Adresse e-mail</label><input id="authEmail" class="field" type="email" autocomplete="email" required maxlength="254" placeholder="nom@exemple.com"></div><div><label class="label" for="authPassword">Mot de passe</label><input id="authPassword" class="field" type="password" autocomplete="current-password" required placeholder="Votre mot de passe"></div><p id="signupHelp" class="hidden text-xs text-slate-400 leading-relaxed">Au moins 8 caractères. Une confirmation par e-mail peut être nécessaire.</p><button id="authSubmitBtn" class="btn primary w-full" type="submit">Se connecter</button></form>
   </div>
+  <div id="authAccountPanel" class="hidden space-y-4"><div class="bg-slate-900 rounded-xl p-4"><p class="text-xs text-slate-400 mb-2">Compte connecté</p><p id="accountEmail" class="text-sm break-any"></p></div><p class="text-xs text-slate-400 leading-relaxed">Votre capital et vos paris sont liés à votre compte Supabase.</p><button id="logoutBtn" class="btn danger w-full" type="button">Se déconnecter</button></div><p id="authMessage" class="hidden" role="status" aria-live="polite"></p>
+</div></div>
 
-  <footer class="max-w-7xl mx-auto w-full px-4 pb-6 text-center text-[11px] text-slate-500">
-    Données du compte enregistrées dans Supabase. Analyses IA sans garantie de gain.
-  </footer>
+<!-- PARI -->
+<div id="betModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="betModalTitle"><div class="dialog panel max-w-lg">
+  <div class="flex items-center justify-between gap-3 mb-4"><h2 id="betModalTitle" class="font-bold text-lg">Enregistrer un pari</h2><button class="btn secondary" type="button" data-close="betModal" aria-label="Fermer">×</button></div><p id="aiBetNotice" class="hidden text-xs text-amber-200 bg-amber-500/10 p-3 rounded-xl mb-4 leading-relaxed"></p>
+  <form id="betForm" class="space-y-4"><input id="betId" type="hidden"><div><label class="label" for="betSport">Sport / type de pari</label><select id="betSport" class="field"><option>Football</option><option>Basketball</option><option>Tennis</option><option>Combiné</option></select></div><div><label class="label" for="betMatch">Match / sélection</label><input id="betMatch" class="field" required maxlength="500" placeholder="Équipe A vs Équipe B — sélection"></div><div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4"><div><label class="label" for="betStake">Mise ($)</label><input id="betStake" class="field" type="number" step="0.01" min="0.01" required></div><div><label class="label" for="betOdds">Cote totale vérifiée</label><input id="betOdds" class="field" type="number" step="0.01" min="1" required placeholder="À vérifier"></div></div><div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4"><div><label class="label" for="betDate">Date du pari</label><input id="betDate" class="field" type="date" required></div><div><label class="label" for="betStatus">Statut</label><select id="betStatus" class="field"><option value="PENDING">En cours</option><option value="WON">Gagné</option><option value="LOST">Perdu</option></select></div></div><div><label class="label" for="betNotes">Notes / détails du combiné</label><textarea id="betNotes" class="field" rows="5" maxlength="30000"></textarea></div><button id="betSubmitBtn" class="btn primary w-full" type="submit">Enregistrer le pari</button><p class="text-[11px] text-slate-500 leading-relaxed">Enregistrement dans votre journal uniquement. Aucun pari n’est placé.</p></form>
+</div></div>
 
-  <script>
-    'use strict';
+<!-- CAPITAL -->
+<div id="configModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="configModalTitle"><div class="dialog panel max-w-sm"><div class="flex items-center justify-between gap-3 mb-5"><h2 id="configModalTitle" class="font-bold text-lg">Réglages du capital</h2><button class="btn secondary" type="button" data-close="configModal" aria-label="Fermer">×</button></div><form id="configForm" class="space-y-4"><div><label class="label" for="configInitialCapital">Capital initial ($)</label><input id="configInitialCapital" class="field" type="number" min="0.01" step="0.01" required></div><button id="configSubmitBtn" class="btn primary w-full" type="submit">Enregistrer</button></form></div></div>
 
-    // Clé publique anon : ne jamais utiliser une clé service_role ici.
-    const SUPABASE_URL = 'https://zhbfzijusdrnpfpqvdvq.supabase.co';
-
-    const SUPABASE_ANON_KEY =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoYmZ6aWp1c2RybnBmcHF2ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTUwODgsImV4cCI6MjEwOTE5MTA4OH0.3nBtDl3LGXgW0HwpDYQQ9HwnY7LUjsCLDLg51feF84A';
-
-    let db = null;
-    let chartInstance = null;
-    let authMode = 'LOGIN';
-    let authBusy = false;
-    let mutationBusy = false;
-    let aiBusy = false;
-    let alertTimer = null;
-    let modalTrigger = null;
-    let loadVersion = 0;
-
-    const appState = {
-      user: null,
-      profile: null,
-      bets: [],
-      loading: false,
-      ready: false
-    };
-
-    const validSports = ['Football', 'Basketball', 'Tennis', 'Combiné'];
-    const validStatuses = ['PENDING', 'WON', 'LOST'];
-
-    const $ = id => document.getElementById(id);
-
-    function element(tag, className = '', text) {
-      const node = document.createElement(tag);
-      node.className = className;
-      if (text !== undefined) node.textContent = String(text);
-      return node;
-    }
-
-    function text(value, fallback = '') {
-      return typeof value === 'string' && value.trim()
-        ? value.trim()
-        : fallback;
-    }
-
-    function money(value) {
-      return '$' + Number(value).toFixed(2);
-    }
-
-    function parisDate() {
-      const parts = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Europe/Paris',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).formatToParts(new Date());
-
-      const values = Object.fromEntries(parts.map(p => [p.type, p.value]));
-      return `${values.year}-${values.month}-${values.day}`;
-    }
-
-    function validDate(value) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      const date = new Date(value + 'T00:00:00Z');
-      return !Number.isNaN(date.getTime()) &&
-        date.toISOString().slice(0, 10) === value;
-    }
-
-    function profitOf(bet) {
-      if (bet.status === 'WON') return bet.stake * (bet.odds - 1);
-      if (bet.status === 'LOST') return -bet.stake;
-      return 0;
-    }
-
-    function showAlert(message, type = 'INFO') {
-      clearTimeout(alertTimer);
-
-      const styles = {
-        INFO: 'bg-blue-950/80 border-blue-500/30 text-blue-200',
-        SUCCESS: 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200',
-        ERROR: 'bg-rose-950/80 border-rose-500/30 text-rose-200'
-      };
-
-      $('statusAlertText').textContent = message;
-      $('statusAlert').className =
-        'p-4 rounded-xl border flex justify-between items-center text-xs ' +
-        (styles[type] || styles.INFO);
-
-      alertTimer = setTimeout(hideAlert, 8000);
-    }
-
-    function hideAlert() {
-      clearTimeout(alertTimer);
-      $('statusAlert').classList.add('hidden');
-    }
-
-    function authMessage(message, error = false) {
-      $('authMessage').textContent = message;
-      $('authMessage').className =
-        'text-xs p-3 rounded-xl leading-relaxed ' +
-        (error
-          ? 'bg-rose-500/10 text-rose-300'
-          : 'bg-blue-500/10 text-blue-200');
-    }
-
-    function openModal(id) {
-      modalTrigger = document.activeElement;
-      $(id).classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-
-      requestAnimationFrame(() => {
-        const input = Array.from(
-          $(id).querySelectorAll('input:not([type="hidden"]), select, button')
-        ).find(node => node.getClientRects().length && !node.disabled);
-
-        input?.focus();
-      });
-    }
-
-    function closeModal(id) {
-      $(id).classList.add('hidden');
-
-      if (!document.querySelector('[role="dialog"]:not(.hidden)')) {
-        document.body.style.overflow = '';
-        modalTrigger?.focus();
-      }
-    }
-
-    function switchMainTab(tab) {
-      const dashboard = tab === 'DASHBOARD';
-
-      $('dashboardSection').classList.toggle('hidden', !dashboard);
-      $('aiAssistantSection').classList.toggle('hidden', dashboard);
-
-      [
-        ['navDashboardBtn', dashboard, false],
-        ['navAiBtn', !dashboard, true],
-        ['mobNavDashBtn', dashboard, false],
-        ['mobNavAiBtn', !dashboard, true]
-      ].forEach(([id, active, ai]) => {
-        const mobile = id.startsWith('mob');
-        $(id).className =
-          (mobile ? 'flex-1 ' : 'px-4 ') +
-          'py-2 rounded-lg text-xs font-bold ' +
-          (active
-            ? ai ? 'bg-amber-500 text-slate-950' : 'bg-blue-600 text-white'
-            : 'text-slate-400 hover:text-white');
-      });
-
-      if (dashboard) {
-        requestAnimationFrame(() => chartInstance?.resize());
-      }
-    }
-
-    // AUTHENTIFICATION
-
-    function switchAuthTab(mode) {
-      authMode = mode;
-      const login = mode === 'LOGIN';
-
-      $('authModalTitle').textContent = login ? 'Connexion' : 'Inscription';
-      $('authSubmitBtn').textContent = login ? 'Se connecter' : 'Créer mon compte';
-
-      $('authTabLogin').className =
-        'flex-1 py-2 ' +
-        (login ? 'border-b-2 border-blue-500 text-blue-400' : 'text-slate-400');
-
-      $('authTabSignup').className =
-        'flex-1 py-2 ' +
-        (!login ? 'border-b-2 border-blue-500 text-blue-400' : 'text-slate-400');
-
-      $('signupHelp').classList.toggle('hidden', login);
-      $('authPassword').autocomplete = login ? 'current-password' : 'new-password';
-
-      if (login) {
-        $('authPassword').removeAttribute('minlength');
-      } else {
-        $('authPassword').minLength = 8;
-      }
-
-      $('authMessage').classList.add('hidden');
-    }
-
-    function renderAuth() {
-      const user = appState.user;
-
-      $('authBtnText').textContent =
-        user ? (user.email || 'Mon compte').split('@')[0] : 'Connexion';
-
-      $('authGuestPanel').classList.toggle('hidden', !!user);
-      $('authAccountPanel').classList.toggle('hidden', !user);
-      $('accountEmail').textContent = user?.email || '';
-
-      if (user) $('authModalTitle').textContent = 'Mon compte';
-
-      $('reloadDataBtn').classList.toggle('hidden', !user);
-      $('reloadDataBtn').disabled = appState.loading || mutationBusy;
-
-      if (!db) {
-        $('connectionStatus').textContent = 'Connexion Supabase indisponible.';
-      } else if (!user) {
-        $('connectionStatus').textContent =
-          'Connectez-vous pour charger votre capital et vos paris.';
-      } else if (appState.loading) {
-        $('connectionStatus').textContent = 'Chargement de vos données Supabase…';
-      } else if (appState.ready) {
-        $('connectionStatus').textContent =
-          'Connecté : ' + (user.email || user.id) +
-          ' — données chargées depuis Supabase.';
-      } else {
-        $('connectionStatus').textContent =
-          'Compte connecté, mais les données n’ont pas pu être chargées. Cliquez sur Recharger.';
-      }
-    }
-
-    async function handleAuthSubmit(event) {
-      event.preventDefault();
-
-      if (authBusy) return;
-
-      if (!db) {
-        authMessage('Le client Supabase n’a pas pu être chargé.', true);
-        return;
-      }
-
-      const email = $('authEmail').value.trim();
-      const password = $('authPassword').value;
-      const requestedMode = authMode;
-
-      if (requestedMode === 'SIGNUP' && password.length < 8) {
-        authMessage('Utilisez au moins 8 caractères pour le mot de passe.', true);
-        return;
-      }
-
-      authBusy = true;
-      $('authSubmitBtn').disabled = true;
-      $('authTabLogin').disabled = true;
-      $('authTabSignup').disabled = true;
-
-      try {
-        if (requestedMode === 'SIGNUP') {
-          const { data, error } = await db.auth.signUp({ email, password });
-
-          if (error) throw error;
-
-          if (data.session) {
-            authMessage('Inscription terminée. Connexion en cours…');
-          } else {
-            authMessage(
-              'Demande d’inscription enregistrée. Si une confirmation est requise, ' +
-              'consultez votre boîte e-mail, puis connectez-vous.'
-            );
-          }
-        } else {
-          const { error } = await db.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-
-          authMessage('Connexion réussie.');
-          closeModal('authModal');
-          showAlert('Connexion réussie.', 'SUCCESS');
+<script>
+'use strict';
+const SUPABASE_URL='https://zhbfzijusdrnpfpqvdvq.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoYmZ6aWp1c2RybnBmcHF2ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTUwODgsImV4cCI6MjEwOTE5MTA4OH0.3nBtDl3LGXgW0HwpDYQQ9HwnY7LUjsCLDLg51feF84A';
+const $=id=>document.getElementById(id);
+const sports=['Football','Basketball','Tennis','Combiné'];
+const statuses=['PENDING','WON','LOST'];
+const state={user:null,profile:null,bets:[],ready:false,loading:false};
+let db=null,chart=null,authMode='LOGIN',authBusy=false,mutationBusy=false,aiBusy=false,loadVersion=0,aiVersion=0,alertTimer=null,modalTrigger=null;
+let comboSelections=[],draftComboSignature=null;
+function node(tag,classes='',value){const e=document.createElement(tag);e.className=classes;if(value!==undefined)e.textContent=String(value);return e;}
+function txt(v,fallback=''){return typeof v==='string'&&v.trim()?v.trim():fallback;}
+function money(v){return '$'+Number(v).toFixed(2);}
+function parisDate(){const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day}`;}
+function validDate(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T00:00:00Z');return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===v;}
+function betId(){return 'bet_'+(globalThis.crypto?.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random().toString(36).slice(2));}
+function profit(b){return b.status==='WON'?b.stake*(b.odds-1):b.status==='LOST'?-b.stake:0;}
+function showAlert(message,type='INFO'){clearTimeout(alertTimer);const styles={INFO:'bg-blue-950/80 border-blue-500/30 text-blue-200',SUCCESS:'bg-emerald-950/80 border-emerald-500/30 text-emerald-200',ERROR:'bg-rose-950/80 border-rose-500/30 text-rose-200'};$('statusAlertText').textContent=message;$('statusAlert').className='border rounded-xl flex items-center justify-between gap-2 pl-4 pr-1 py-2 text-xs leading-relaxed '+styles[type];alertTimer=setTimeout(hideAlert,10000);}
+function hideAlert(){clearTimeout(alertTimer);$('statusAlert').classList.add('hidden');}
+function authMessage(message,error=false){$('authMessage').textContent=message;$('authMessage').className='mt-4 p-3 rounded-xl text-xs leading-relaxed break-any '+(error?'bg-rose-500/10 text-rose-200':'bg-blue-500/10 text-blue-200');}
+function openModal(id,focusId){modalTrigger=document.activeElement;$(id).classList.remove('hidden');document.body.style.overflow='hidden';requestAnimationFrame(()=>{const target=focusId?$(focusId):Array.from($(id).querySelectorAll('input:not([type=hidden]),select,textarea,button')).find(e=>e.getClientRects().length&&!e.disabled);target?.focus();});}
+function closeModal(id){if($(id).classList.contains('hidden'))return;$(id).classList.add('hidden');if(!document.querySelector('.modal:not(.hidden)')){document.body.style.overflow='';if(modalTrigger?.isConnected)modalTrigger.focus();}}
+function switchMainTab(tab){const dash=tab==='DASHBOARD';$('dashboardSection').classList.toggle('hidden',!dash);$('aiAssistantSection').classList.toggle('hidden',dash);document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===tab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});if(dash)requestAnimationFrame(()=>chart?.resize());}
+function switchAuthTab(mode){if(authBusy)return;authMode=mode;const login=mode==='LOGIN';$('authTabLogin').className='btn '+(login?'primary':'secondary');$('authTabSignup').className='btn '+(!login?'primary':'secondary');$('authSubmitBtn').textContent=login?'Se connecter':'Créer mon compte';$('signupHelp').classList.toggle('hidden',login);$('authPassword').autocomplete=login?'current-password':'new-password';if(login)$('authPassword').removeAttribute('minlength');else $('authPassword').minLength=8;$('authMessage').classList.add('hidden');renderAuth();}
+function openAccount(){if(!state.user)switchAuthTab('LOGIN');renderAuth();openModal('authModal');}
+function renderAuth(){const u=state.user;$('authBtnText').textContent=u?(u.email||'Mon compte').split('@')[0]:'Connexion';$('authGuestPanel').classList.toggle('hidden',!!u);$('authAccountPanel').classList.toggle('hidden',!u);$('accountEmail').textContent=u?.email||'';$('authModalTitle').textContent=u?'Mon compte':authMode==='LOGIN'?'Connexion':'Inscription';$('reloadDataBtn').classList.toggle('hidden',!u);$('reloadDataBtn').disabled=state.loading||mutationBusy;$('logoutBtn').disabled=authBusy||mutationBusy;$('connectionStatus').textContent=!db?'Connexion Supabase indisponible.':!u?'Connectez-vous pour retrouver votre capital et vos paris.':state.loading?'Chargement des données Supabase…':state.ready?'Connecté : '+(u.email||u.id)+' — données chargées.':'Compte connecté, données indisponibles. Cliquez sur Recharger.';}
+async function handleAuthSubmit(event){event.preventDefault();if(authBusy)return;if(!db){authMessage('Supabase n’a pas pu être chargé.',true);return;}const email=$('authEmail').value.trim(),password=$('authPassword').value,mode=authMode;if(mode==='SIGNUP'&&password.length<8){authMessage('Utilisez au moins 8 caractères.',true);return;}authBusy=true;['authSubmitBtn','authTabLogin','authTabSignup'].forEach(id=>$(id).disabled=true);$('authSubmitBtn').textContent='Veuillez patienter…';try{if(mode==='SIGNUP'){const {data,error}=await db.auth.signUp({email,password});if(error)throw error;if(data.session){closeModal('authModal');showAlert('Compte créé. Chargement des données…','SUCCESS');}else authMessage('Demande d’inscription enregistrée. Consultez votre boîte e-mail si une confirmation est demandée, puis connectez-vous.');}else{const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error;closeModal('authModal');showAlert('Connexion réussie. Attendez le chargement de vos données.','SUCCESS');}$('authPassword').value='';}catch(e){authMessage(e.message||'Authentification impossible.',true);}finally{authBusy=false;['authSubmitBtn','authTabLogin','authTabSignup'].forEach(id=>$(id).disabled=false);$('authSubmitBtn').textContent=authMode==='LOGIN'?'Se connecter':'Créer mon compte';renderAuth();}}
+async function logout(){if(!db||authBusy||mutationBusy)return;authBusy=true;renderAuth();try{const {error}=await db.auth.signOut();if(error)throw error;applySession(null);$('authForm').reset();$('authMessage').classList.add('hidden');closeModal('authModal');showAlert('Vous êtes déconnecté.','SUCCESS');}catch(e){authMessage(e.message,true);}finally{authBusy=false;if(!state.user)switchAuthTab('LOGIN');renderAuth();}}
+function resetAiDisplay(){aiVersion++;$('aiSuggestionsGrid').replaceChildren(node('p','col-span-full text-center text-sm text-slate-400 py-8','Connectez-vous, puis lancez une recherche.'));$('aiLastUpdate').classList.add('hidden');$('searchSources').classList.add('hidden');$('sourceList').replaceChildren();}
+function applySession(session){const u=session?.user||null,old=state.user?.id||null,next=u?.id||null;state.user=u;if(old===next){renderAuth();return;}loadVersion++;state.profile=null;state.bets=[];state.ready=false;state.loading=false;clearCombo();resetAiDisplay();closeModal('betModal');closeModal('configModal');renderAll();if(u)setTimeout(()=>{if(state.user?.id===next)refreshUserData();},0);}
+async function allBets(uid){const rows=[],size=500;for(let offset=0;;offset+=size){const {data,error}=await db.from('bets').select('id,date,sport,match,stake,odds,status,notes,user_id').eq('user_id',uid).order('date',{ascending:false}).order('id',{ascending:false}).range(offset,offset+size-1);if(error)throw error;rows.push(...data);if(data.length<size)break;}return rows.map(b=>{const stake=Number(b.stake),odds=Number(b.odds);if(b.stake==null||b.odds==null||!Number.isFinite(stake)||stake<=0||!Number.isFinite(odds)||odds<1||!Number.isFinite(stake*odds)||!statuses.includes(b.status)||!validDate(b.date))throw new Error('Données invalides dans le pari '+b.id+'. Vérifiez sa mise, sa cote, son statut et sa date.');return {...b,stake,odds};});}
+async function refreshUserData(){const uid=state.user?.id;if(!db||!uid)return false;const version=++loadVersion;state.loading=true;state.ready=false;state.profile=null;state.bets=[];renderAll();try{const created=await db.from('profiles').upsert({id:uid},{onConflict:'id',ignoreDuplicates:true});if(created.error)throw created.error;const [p,bets]=await Promise.all([db.from('profiles').select('id,initial_capital').eq('id',uid).single(),allBets(uid)]);if(p.error)throw p.error;const capital=Number(p.data.initial_capital);if(p.data.initial_capital==null||!Number.isFinite(capital)||capital<0)throw new Error('Capital initial invalide dans le profil.');if(version!==loadVersion||state.user?.id!==uid)return false;state.profile={id:uid,initialCapital:capital};state.bets=bets;state.ready=true;return true;}catch(e){console.error('Chargement Supabase',e);if(version===loadVersion&&state.user?.id===uid)showAlert('Chargement impossible : '+e.message,'ERROR');return false;}finally{if(version===loadVersion){state.loading=false;renderAll();}}}
+function requireReady(){if(!state.user){openAccount();showAlert('Connectez-vous, puis recliquez sur votre choix.');return false;}if(!state.ready||state.loading||mutationBusy){showAlert('Attendez la fin du chargement ou rechargez vos données.');return false;}return true;}
+function resetBetForm(){if(draftComboSignature)draftComboSignature=null;$('betForm').reset();$('betId').value='';$('betDate').value=parisDate();$('betStatus').value='PENDING';$('betModalTitle').textContent='Enregistrer un pari';$('aiBetNotice').classList.add('hidden');}
+function openNewBet(){if(!requireReady())return;resetBetForm();openModal('betModal','betMatch');}
+function addAiSuggestionToBet(item){if(!requireReady())return;resetBetForm();$('betModalTitle').textContent='Ajouter une proposition IA';$('betSport').value='Football';$('betMatch').value=[txt(item.match),txt(item.selection)].filter(Boolean).join(' — ').slice(0,500);$('betDate').value=validDate(item.date)?item.date:parisDate();const has=typeof item.odds==='number'&&Number.isFinite(item.odds)&&item.odds>1;$('betOdds').value=has?item.odds.toFixed(2):'';$('betStake').value='';$('betNotes').value=['Proposition IA — à vérifier.','Match : '+item.match,'Sélection : '+item.selection,'Compétition : '+txt(item.league),'Horaire : '+txt(item.time),'Analyse : '+txt(item.tip),'Cote et conditions à vérifier chez le bookmaker.','Confiance non évaluée.'].join('\n').slice(0,30000);$('aiBetNotice').textContent='Vérifiez la date, la sélection et la cote, puis choisissez votre mise. Rien n’est enregistré avant confirmation.';$('aiBetNotice').classList.remove('hidden');openModal('betModal','betStake');}
+function editBet(id){if(!requireReady())return;const b=state.bets.find(x=>x.id===id);if(!b)return;resetBetForm();$('betId').value=b.id;$('betSport').value=sports.includes(b.sport)?b.sport:'Football';$('betMatch').value=b.match||'';$('betStake').value=b.stake;$('betOdds').value=b.odds;$('betDate').value=b.date;$('betStatus').value=b.status;$('betNotes').value=b.notes||'';$('betModalTitle').textContent='Modifier le pari';openModal('betModal');}
+async function saveBet(event){event.preventDefault();if(!requireReady())return;const uid=state.user.id,id=$('betId').value,signature=draftComboSignature;const b={date:$('betDate').value,sport:$('betSport').value,match:$('betMatch').value.trim(),stake:Number($('betStake').value),odds:Number($('betOdds').value),status:$('betStatus').value,notes:$('betNotes').value.trim()};if(!b.match||!sports.includes(b.sport)||!statuses.includes(b.status)||!validDate(b.date)||!Number.isFinite(b.stake)||b.stake<=0||!Number.isFinite(b.odds)||b.odds<1||!Number.isFinite(b.stake*b.odds)){showAlert('Vérifiez les informations du pari.','ERROR');return;}mutationBusy=true;$('betSubmitBtn').disabled=true;$('betSubmitBtn').textContent='Enregistrement…';renderAuth();try{const result=id?await db.from('bets').update(b).eq('id',id).eq('user_id',uid).select('id').single():await db.from('bets').insert({...b,id:betId(),user_id:uid}).select('id').single();if(result.error)throw result.error;if(state.user?.id===uid){closeModal('betModal');if(!id&&b.sport==='Combiné'&&signature&&signature===comboSignature())clearCombo();draftComboSignature=null;const ok=await refreshUserData();showAlert(ok?'Pari enregistré dans Supabase.':'Pari enregistré, mais le rechargement a échoué. Cliquez sur Recharger.',ok?'SUCCESS':'ERROR');}}catch(e){showAlert('Enregistrement impossible : '+e.message,'ERROR');}finally{mutationBusy=false;$('betSubmitBtn').disabled=false;$('betSubmitBtn').textContent='Enregistrer le pari';renderAuth();}}
+async function deleteBet(id){if(!requireReady()||!confirm('Supprimer définitivement ce pari ?'))return;const uid=state.user.id;mutationBusy=true;renderAuth();try{const {data,error}=await db.from('bets').delete().eq('id',id).eq('user_id',uid).select('id');if(error)throw error;if(!data?.length)throw new Error('Pari introuvable ou accès refusé.');if(state.user?.id===uid){const ok=await refreshUserData();showAlert(ok?'Pari supprimé.':'Pari supprimé, mais rechargement impossible.',ok?'SUCCESS':'ERROR');}}catch(e){showAlert(e.message,'ERROR');}finally{mutationBusy=false;renderAuth();}}
+function openConfig(){if(!requireReady())return;$('configInitialCapital').value=state.profile.initialCapital;openModal('configModal');}
+async function saveConfig(event){event.preventDefault();if(!requireReady())return;const uid=state.user.id,capital=Number($('configInitialCapital').value);if(!Number.isFinite(capital)||capital<=0){showAlert('Capital invalide.','ERROR');return;}mutationBusy=true;$('configSubmitBtn').disabled=true;renderAuth();try{const {error}=await db.from('profiles').update({initial_capital:capital}).eq('id',uid).select('id').single();if(error)throw error;if(state.user?.id===uid){closeModal('configModal');const ok=await refreshUserData();showAlert(ok?'Capital enregistré.':'Capital enregistré, mais rechargement impossible.',ok?'SUCCESS':'ERROR');}}catch(e){showAlert(e.message,'ERROR');}finally{mutationBusy=false;$('configSubmitBtn').disabled=false;renderAuth();}}
+function renderMetrics(){if(!state.ready){['metricCapital','metricProfit','metricYield','metricWinRate'].forEach(id=>$(id).textContent='—');$('metricInitialCapital').textContent='Départ : —';$('metricAvailableCapital').textContent='Disponible : —';return;}let p=0,pending=0,staked=0,settled=0,won=0;state.bets.forEach(b=>{p+=profit(b);if(b.status==='PENDING')pending+=b.stake;else{settled++;staked+=b.stake;if(b.status==='WON')won++;}});const cap=state.profile.initialCapital+p,y=staked?p/staked*100:0;$('metricCapital').textContent=money(cap);$('metricInitialCapital').textContent='Départ : '+money(state.profile.initialCapital);$('metricAvailableCapital').textContent='Disponible : '+money(cap-pending);$('metricProfit').textContent=(p>=0?'+':'-')+money(Math.abs(p));$('metricProfit').className='metric mt-2 break-any '+(p>=0?'text-emerald-400':'text-rose-400');$('metricYield').textContent=(y>=0?'+':'')+y.toFixed(1)+'%';$('metricWinRate').textContent=(settled?won/settled*100:0).toFixed(1)+'%';}
+function cell(label,child,classes=''){const td=node('td',classes);td.dataset.label=label;if(child instanceof Node)td.append(child);else td.textContent=String(child);return td;}
+function renderBets(){const body=$('betsTableBody');body.replaceChildren();$('betCount').textContent=state.ready?state.bets.length+' pari(s)':'';if(!state.ready||!state.bets.length){const tr=node('tr'),td=node('td','empty text-center text-slate-400',state.loading?'Chargement…':!state.user?'Connectez-vous pour retrouver vos paris.':!state.ready?'Données indisponibles. Cliquez sur Recharger.':'Aucun pari enregistré.');td.colSpan=7;tr.append(td);body.append(tr);return;}const labels={PENDING:['En cours','pending'],WON:['Gagné','won'],LOST:['Perdu','lost']};state.bets.forEach(b=>{const tr=node('tr'),desc=node('div','min-w-0 break-any');desc.append(node('p','font-bold',b.match||'Non renseigné'),node('p','text-xs text-slate-400 mt-1',b.sport||''));if(b.notes){const details=node('details','mt-2');details.append(node('summary','text-xs text-blue-400 cursor-pointer','Voir les notes'),node('p','notes',b.notes));desc.append(details);}const actions=node('div','flex flex-wrap sm:justify-end gap-2');const edit=node('button','btn secondary','Modifier');edit.type='button';edit.addEventListener('click',()=>editBet(b.id));const remove=node('button','btn danger','Supprimer');remove.type='button';remove.addEventListener('click',()=>deleteBet(b.id));actions.append(edit,remove);tr.append(cell('Date',b.date),cell('Sélection',desc),cell('Mise',money(b.stake)),cell('Cote','@'+b.odds.toFixed(2)),cell('Retour potentiel',money(b.stake*b.odds),'text-emerald-300'),cell('Statut',node('span','badge '+labels[b.status][1],labels[b.status][0])),cell('Actions',actions,'right'));body.append(tr);});}
+function renderChart() {
+  if (chart) { chart.destroy(); chart = null; }
+  if (typeof Chart === 'undefined') {
+    $('chartError').classList.remove('hidden');
+    return;
+  }
+  $('chartError').classList.add('hidden');
+  if (!state.ready) return;
+  let capital = state.profile.initialCapital;
+  const labels = ['Départ'];
+  const values = [capital];
+  [...state.bets]
+    .filter(b => b.status !== 'PENDING')
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+    .forEach(b => {
+      capital += profit(b);
+      labels.push(b.date);
+      values.push(capital);
+    });
+  try {
+    chart = new Chart($('bankrollChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Capital ($)', data: values, borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,.1)', fill: true,
+          tension: .2, borderWidth: 3, pointRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#94a3b8', maxTicksLimit: 6 }, grid: { color: '#ffffff0b' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: '#ffffff0b' } }
         }
-
-        $('authPassword').value = '';
-      } catch (error) {
-        console.error('Authentification :', error);
-        authMessage(error.message || 'Échec de l’authentification.', true);
-      } finally {
-        authBusy = false;
-        $('authSubmitBtn').disabled = false;
-        $('authTabLogin').disabled = false;
-        $('authTabSignup').disabled = false;
-      }
-    }
-
-    async function handleLogout() {
-      if (!db || mutationBusy || authBusy) return;
-
-      $('logoutBtn').disabled = true;
-
-      try {
-        const { error } = await db.auth.signOut();
-        if (error) throw error;
-
-        applySession(null);
-        $('authForm').reset();
-        $('authMessage').classList.add('hidden');
-        switchAuthTab('LOGIN');
-        closeModal('authModal');
-
-        showAlert('Vous êtes déconnecté.', 'SUCCESS');
-      } catch (error) {
-        authMessage(error.message || 'Déconnexion impossible.', true);
-      } finally {
-        $('logoutBtn').disabled = false;
-      }
-    }
-
-    function applySession(session) {
-      const nextUser = session?.user || null;
-      const previousId = appState.user?.id;
-      const nextId = nextUser?.id;
-
-      appState.user = nextUser;
-      renderAuth();
-
-      if (previousId === nextId) return;
-
-      // Invalide les anciennes requêtes avant d'afficher un autre compte.
-      loadVersion++;
-      appState.profile = null;
-      appState.bets = [];
-      appState.ready = false;
-      appState.loading = false;
-
-      closeModal('betModal');
-      closeModal('configModal');
-      renderAll();
-
-      if (nextUser) {
-        setTimeout(() => {
-          if (appState.user?.id === nextId) {
-            refreshUserData();
-          }
-        }, 0);
-      }
-    }
-
-    // CHARGEMENT DES DONNÉES
-
-    async function fetchAllBets(userId) {
-      const rows = [];
-      const pageSize = 500;
-
-      for (let offset = 0; ; offset += pageSize) {
-        const { data, error } = await db
-          .from('bets')
-          .select('id,date,sport,match,stake,odds,status,notes,user_id')
-          .eq('user_id', userId)
-          .order('date', { ascending: false })
-          .order('id', { ascending: false })
-          .range(offset, offset + pageSize - 1);
-
-        if (error) throw error;
-
-        rows.push(...data);
-
-        if (data.length < pageSize) break;
-      }
-
-      return rows.map(row => {
-        const stake = Number(row.stake);
-        const odds = Number(row.odds);
-
-        if (
-          row.stake == null ||
-          row.odds == null ||
-          !Number.isFinite(stake) ||
-          stake <= 0 ||
-          !Number.isFinite(odds) ||
-          odds < 1 ||
-          !Number.isFinite(stake * odds) ||
-          !validStatuses.includes(row.status) ||
-          !validDate(row.date)
-        ) {
-          throw new Error(
-            'Un pari existant contient une mise, une cote, un statut ou une date invalide. ' +
-            'Vérifiez la ligne : ' + row.id
-          );
-        }
-
-        return { ...row, stake, odds };
-      });
-    }
-
-    async function refreshUserData() {
-      const userId = appState.user?.id;
-
-      if (!db || !userId) return false;
-
-      const version = ++loadVersion;
-
-      appState.loading = true;
-      appState.ready = false;
-      appState.profile = null;
-      appState.bets = [];
-      renderAll();
-
-      try {
-        // Crée seulement le profil absent, sans remplacer le capital existant.
-        const { error: createError } = await db
-          .from('profiles')
-          .upsert(
-            { id: userId },
-            { onConflict: 'id', ignoreDuplicates: true }
-          );
-
-        if (createError) throw createError;
-
-        const [profileResult, bets] = await Promise.all([
-          db.from('profiles')
-            .select('id,initial_capital')
-            .eq('id', userId)
-            .single(),
-          fetchAllBets(userId)
-        ]);
-
-        if (profileResult.error) throw profileResult.error;
-
-        const profile = profileResult.data;
-        const capital = Number(profile.initial_capital);
-
-        if (
-          profile.initial_capital == null ||
-          !Number.isFinite(capital) ||
-          capital < 0
-        ) {
-          throw new Error('Le capital initial du profil est invalide.');
-        }
-
-        if (version !== loadVersion || appState.user?.id !== userId) {
-          return false;
-        }
-
-        appState.profile = { id: profile.id, initialCapital: capital };
-        appState.bets = bets;
-        appState.ready = true;
-
-        return true;
-      } catch (error) {
-        console.error('Chargement Supabase :', error);
-
-        if (version === loadVersion && appState.user?.id === userId) {
-          showAlert(
-            'Chargement impossible : ' + error.message,
-            'ERROR'
-          );
-        }
-
-        return false;
-      } finally {
-        if (version === loadVersion) {
-          appState.loading = false;
-          renderAll();
-        }
-      }
-    }
-
-    function requireReady() {
-      if (!appState.user) {
-        switchAuthTab('LOGIN');
-        openModal('authModal');
-        showAlert('Connectez-vous pour gérer vos paris.');
-        return false;
-      }
-
-      if (!appState.ready || appState.loading || mutationBusy) {
-        showAlert('Attendez le chargement ou rechargez vos données.');
-        return false;
-      }
-
-      return true;
-    }
-
-    // GESTION DES PARIS
-
-    function openNewBet() {
-      if (!requireReady()) return;
-
-      $('betForm').reset();
-      $('betId').value = '';
-      $('betDate').value = parisDate();
-      $('betModalTitle').textContent = 'Enregistrer un pari';
-
-      openModal('betModal');
-    }
-
-    function editBet(id) {
-      if (!requireReady()) return;
-
-      const bet = appState.bets.find(item => item.id === id);
-      if (!bet) return;
-
-      $('betId').value = bet.id;
-      $('betSport').value = validSports.includes(bet.sport) ? bet.sport : 'Football';
-      $('betMatch').value = bet.match || '';
-      $('betStake').value = bet.stake;
-      $('betOdds').value = bet.odds;
-      $('betDate').value = bet.date;
-      $('betStatus').value = bet.status;
-      $('betNotes').value = bet.notes || '';
-      $('betModalTitle').textContent = 'Modifier le pari';
-
-      openModal('betModal');
-    }
-
-    async function handleBetSubmit(event) {
-      event.preventDefault();
-      if (!requireReady()) return;
-
-      const userId = appState.user.id;
-      const existingId = $('betId').value;
-
-      const bet = {
-        date: $('betDate').value,
-        sport: $('betSport').value,
-        match: $('betMatch').value.trim(),
-        stake: Number($('betStake').value),
-        odds: Number($('betOdds').value),
-        status: $('betStatus').value,
-        notes: $('betNotes').value.trim()
-      };
-
-      if (
-        !bet.match ||
-        !validSports.includes(bet.sport) ||
-        !validStatuses.includes(bet.status) ||
-        !validDate(bet.date) ||
-        !Number.isFinite(bet.stake) ||
-        bet.stake <= 0 ||
-        !Number.isFinite(bet.odds) ||
-        bet.odds < 1 ||
-        !Number.isFinite(bet.stake * bet.odds)
-      ) {
-        showAlert('Vérifiez les informations du pari.', 'ERROR');
-        return;
-      }
-
-      mutationBusy = true;
-      $('betSubmitBtn').disabled = true;
-      $('betSubmitBtn').textContent = 'Enregistrement…';
-
-      try {
-        let result;
-
-        if (existingId) {
-          result = await db
-            .from('bets')
-            .update(bet)
-            .eq('id', existingId)
-            .eq('user_id', userId)
-            .select('id')
-            .single();
-        } else {
-          result = await db
-            .from('bets')
-            .insert({
-              ...bet,
-              id: 'bet_' + crypto.randomUUID(),
-              user_id: userId
-            })
-            .select('id')
-            .single();
-        }
-
-        if (result.error) throw result.error;
-
-        if (appState.user?.id === userId) {
-          closeModal('betModal');
-          const refreshed = await refreshUserData();
-
-          if (refreshed) {
-            showAlert('Pari enregistré dans Supabase.', 'SUCCESS');
-          }
-        }
-      } catch (error) {
-        showAlert('Enregistrement impossible : ' + error.message, 'ERROR');
-      } finally {
-        mutationBusy = false;
-        $('betSubmitBtn').disabled = false;
-        $('betSubmitBtn').textContent = 'Enregistrer le pari';
-        renderAuth();
-      }
-    }
-
-    async function deleteBet(id) {
-      if (!requireReady()) return;
-      if (!confirm('Supprimer définitivement ce pari ?')) return;
-
-      const userId = appState.user.id;
-      mutationBusy = true;
-
-      try {
-        const { data, error } = await db
-          .from('bets')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', userId)
-          .select('id');
-
-        if (error) throw error;
-        if (!data?.length) throw new Error('Pari introuvable ou accès refusé.');
-
-        if (appState.user?.id === userId) {
-          const refreshed = await refreshUserData();
-
-          if (refreshed) {
-            showAlert('Pari supprimé.', 'SUCCESS');
-          }
-        }
-      } catch (error) {
-        showAlert('Suppression impossible : ' + error.message, 'ERROR');
-      } finally {
-        mutationBusy = false;
-        renderAuth();
-      }
-    }
-
-    // CAPITAL
-
-    function openConfig() {
-      if (!requireReady()) return;
-
-      $('configInitialCapital').value = appState.profile.initialCapital;
-      openModal('configModal');
-    }
-
-    async function handleConfigSubmit(event) {
-      event.preventDefault();
-      if (!requireReady()) return;
-
-      const capital = Number($('configInitialCapital').value);
-
-      if (!Number.isFinite(capital) || capital <= 0) {
-        showAlert('Saisissez un capital initial valide.', 'ERROR');
-        return;
-      }
-
-      const userId = appState.user.id;
-      mutationBusy = true;
-      $('configSubmitBtn').disabled = true;
-
-      try {
-        const { error } = await db
-          .from('profiles')
-          .update({ initial_capital: capital })
-          .eq('id', userId)
-          .select('id')
-          .single();
-
-        if (error) throw error;
-
-        if (appState.user?.id === userId) {
-          closeModal('configModal');
-          const refreshed = await refreshUserData();
-
-          if (refreshed) {
-            showAlert('Capital mis à jour dans Supabase.', 'SUCCESS');
-          }
-        }
-      } catch (error) {
-        showAlert('Modification impossible : ' + error.message, 'ERROR');
-      } finally {
-        mutationBusy = false;
-        $('configSubmitBtn').disabled = false;
-        renderAuth();
-      }
-    }
-
-    // AFFICHAGE
-
-    function renderMetrics() {
-      if (!appState.ready) {
-        [
-          'metricCapital',
-          'metricProfit',
-          'metricYield',
-          'metricWinRate'
-        ].forEach(id => $(id).textContent = '—');
-
-        $('metricInitialCapital').textContent = 'Départ : —';
-        $('metricAvailableCapital').textContent = 'Disponible : —';
-        return;
-      }
-
-      let profit = 0;
-      let pending = 0;
-      let settledStake = 0;
-      let settled = 0;
-      let won = 0;
-
-      appState.bets.forEach(bet => {
-        profit += profitOf(bet);
-
-        if (bet.status === 'PENDING') {
-          pending += bet.stake;
-        } else {
-          settled++;
-          settledStake += bet.stake;
-          if (bet.status === 'WON') won++;
-        }
-      });
-
-      const capital = appState.profile.initialCapital + profit;
-      const yieldValue = settledStake ? profit / settledStake * 100 : 0;
-      const winRate = settled ? won / settled * 100 : 0;
-
-      $('metricCapital').textContent = money(capital);
-      $('metricInitialCapital').textContent =
-        'Départ : ' + money(appState.profile.initialCapital);
-      $('metricAvailableCapital').textContent =
-        'Disponible : ' + money(capital - pending);
-
-      $('metricProfit').textContent =
-        (profit >= 0 ? '+' : '-') + money(Math.abs(profit));
-
-      $('metricProfit').className =
-        'text-2xl font-extrabold mt-1 ' +
-        (profit >= 0 ? 'text-emerald-400' : 'text-rose-400');
-
-      $('metricYield').textContent =
-        (yieldValue >= 0 ? '+' : '') + yieldValue.toFixed(1) + '%';
-
-      $('metricWinRate').textContent = winRate.toFixed(1) + '%';
-    }
-
-    function renderBets() {
-      const body = $('betsTableBody');
-      body.replaceChildren();
-
-      if (!appState.ready || !appState.bets.length) {
-        const row = element('tr');
-        const cell = element(
-          'td',
-          'p-8 text-center text-slate-400',
-          appState.loading
-            ? 'Chargement de vos paris…'
-            : !appState.user
-              ? 'Connectez-vous pour retrouver vos paris.'
-              : !appState.ready
-                ? 'Données indisponibles. Cliquez sur Recharger.'
-                : 'Aucun pari enregistré.'
-        );
-
-        cell.colSpan = 7;
-        row.append(cell);
-        body.append(row);
-        return;
-      }
-
-      const statuses = {
-        PENDING: ['En cours', 'text-amber-400 bg-amber-500/10'],
-        WON: ['Gagné', 'text-emerald-400 bg-emerald-500/10'],
-        LOST: ['Perdu', 'text-rose-400 bg-rose-500/10']
-      };
-
-      appState.bets.forEach(bet => {
-        const row = element('tr', 'hover:bg-slate-900/40');
-        const matchCell = element('td', 'p-3');
-
-        matchCell.append(
-          element('div', 'font-bold text-white', bet.match || 'Non renseigné'),
-          element('div', 'text-[10px] text-slate-400 mt-1', bet.sport || '')
-        );
-
-        if (bet.notes) {
-          matchCell.append(
-            element('p', 'text-[10px] text-slate-500 mt-1 max-w-xs break-words', bet.notes)
-          );
-        }
-
-        const statusCell = element('td', 'p-3');
-        const status = statuses[bet.status];
-
-        statusCell.append(
-          element('span', 'px-2 py-1 rounded text-[11px] ' + status[1], status[0])
-        );
-
-        const actions = element('td', 'p-3 text-right whitespace-nowrap');
-
-        const edit = element('button', 'p-2 text-blue-400', 'Modifier');
-        edit.type = 'button';
-        edit.addEventListener('click', () => editBet(bet.id));
-
-        const remove = element('button', 'p-2 text-rose-400', 'Supprimer');
-        remove.type = 'button';
-        remove.addEventListener('click', () => deleteBet(bet.id));
-
-        actions.append(edit, remove);
-
-        row.append(
-          element('td', 'p-3 text-slate-400', bet.date),
-          matchCell,
-          element('td', 'p-3 font-semibold', money(bet.stake)),
-          element('td', 'p-3 text-amber-400', '@' + bet.odds.toFixed(2)),
-          element('td', 'p-3 text-emerald-400', money(bet.stake * bet.odds)),
-          statusCell,
-          actions
-        );
-
-        body.append(row);
-      });
-    }
-
-    function renderChart() {
-      if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;
-      }
-
-      if (typeof Chart === 'undefined') {
-        $('chartError').classList.remove('hidden');
-        return;
-      }
-
-      $('chartError').classList.add('hidden');
-
-      if (!appState.ready) return;
-
-      let capital = appState.profile.initialCapital;
-      const labels = ['Départ'];
-      const values = [capital];
-
-      [...appState.bets]
-        .filter(bet => bet.status !== 'PENDING')
-        .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
-        .forEach(bet => {
-          capital += profitOf(bet);
-          labels.push(bet.date);
-          values.push(capital);
-        });
-
-      try {
-        chartInstance = new Chart($('bankrollChart'), {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Capital ($)',
-              data: values,
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59,130,246,0.1)',
-              borderWidth: 3,
-              fill: true,
-              tension: 0.25
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: {
-                ticks: { color: '#94a3b8' },
-                grid: { color: 'rgba(255,255,255,0.05)' }
-              },
-              y: {
-                ticks: { color: '#94a3b8' },
-                grid: { color: 'rgba(255,255,255,0.05)' }
-              }
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Graphique :', error);
-        $('chartError').classList.remove('hidden');
-      }
-    }
-
-    function renderAll() {
-      renderAuth();
-      renderMetrics();
-      renderBets();
-      renderChart();
-    }
-
-    // ASSISTANT IA — BACKEND /api/pronos CONSERVÉ
-
-    async function generateAiSuggestions() {
-      if (aiBusy) return;
-
-      const grid = $('aiSuggestionsGrid');
-      aiBusy = true;
-
-      $('refreshAiBtn').disabled = true;
-      $('refreshAiBtn').textContent = 'Recherche en cours…';
-      $('aiLastUpdate').classList.add('hidden');
-      grid.setAttribute('aria-busy', 'true');
-
-      grid.replaceChildren(
-        element(
-          'p',
-          'col-span-full py-10 text-center text-amber-300',
-          'Recherche et analyse des matchs du jour…'
-        )
-      );
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 120000);
-
-      try {
-        const response = await fetch('/api/pronos', {
-          method: 'GET',
-          cache: 'no-store',
-          headers: { Accept: 'application/json' },
-          signal: controller.signal
-        });
-
-        const raw = await response.text();
-        let data;
-
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          throw new Error(`Réponse serveur non JSON (HTTP ${response.status}).`);
-        }
-
-        if (!response.ok) {
-          throw new Error(text(data?.error, `Erreur HTTP ${response.status}.`));
-        }
-
-        if (
-          !Array.isArray(data) ||
-          data.some(item =>
-            !item ||
-            !text(item.match) ||
-            !text(item.selection)
-          )
-        ) {
-          throw new Error('Format de réponse inattendu pour les matchs.');
-        }
-
-        grid.replaceChildren();
-
-        if (!data.length) {
-          grid.append(
-            element(
-              'p',
-              'col-span-full p-8 text-center text-slate-400',
-              'Aucun match à venir n’a pu être confirmé pour aujourd’hui.'
-            )
-          );
-        }
-
-        data.slice(0, 3).forEach(item => {
-          const card = element(
-            'article',
-            'glass-panel rounded-xl p-4 flex flex-col justify-between gap-4'
-          );
-
-          const content = element('div');
-          const header = element('div', 'flex justify-between gap-3 mb-2 text-[11px]');
-
-          header.append(
-            element(
-              'span',
-              'text-blue-400 bg-blue-500/10 px-2 py-1 rounded',
-              text(item.league, 'Football')
-            ),
-            element(
-              'span',
-              'text-slate-400 text-right',
-              text(item.time, 'Horaire non confirmé')
-            )
-          );
-
-          content.append(
-            header,
-            element('h3', 'font-bold text-sm', item.match),
-            element(
-              'p',
-              'mt-3 p-3 bg-slate-900/60 rounded-xl text-xs text-slate-300 leading-relaxed',
-              '💡 ' + text(item.tip, 'Analyse non disponible.')
-            )
-          );
-
-          const footer = element('div', 'border-t border-slate-700 pt-3 space-y-2');
-
-          const oddsAvailable =
-            typeof item.odds === 'number' &&
-            Number.isFinite(item.odds) &&
-            item.odds > 1;
-
-          footer.append(
-            element('p', 'text-[10px] text-slate-400 uppercase', 'Piste d’analyse'),
-            element('p', 'text-xs text-amber-400 font-bold', item.selection),
-            element(
-              'p',
-              'text-[11px] text-slate-400',
-              oddsAvailable
-                ? `Cote communiquée : @${item.odds.toFixed(2)} — à vérifier`
-                : 'Cote non vérifiée'
-            ),
-            element('p', 'text-[10px] text-slate-500', 'Confiance non évaluée')
-          );
-
-          card.append(content, footer);
-          grid.append(card);
-        });
-
-        const received = new Date().toLocaleString('fr-FR', {
-          timeZone: 'Europe/Paris'
-        });
-
-        $('aiLastUpdate').textContent =
-          `Réponse reçue le ${received} (heure de Paris). ` +
-          'Cet horaire ne garantit pas la fraîcheur des données sportives.';
-
-        $('aiLastUpdate').classList.remove('hidden');
-      } catch (error) {
-        grid.replaceChildren(
-          element(
-            'div',
-            'col-span-full rounded-xl p-5 border border-rose-500/30 bg-rose-950/40 text-rose-300 text-xs',
-            error.name === 'AbortError'
-              ? 'Le délai d’attente a été dépassé. Réessayez.'
-              : error.message
-          )
-        );
-      } finally {
-        clearTimeout(timeout);
-        aiBusy = false;
-
-        $('refreshAiBtn').disabled = false;
-        $('refreshAiBtn').textContent = 'Actualiser les matchs';
-        grid.setAttribute('aria-busy', 'false');
-      }
-    }
-
-    // INITIALISATION
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      switchAuthTab('LOGIN');
-      switchMainTab('DASHBOARD');
-
-      document.querySelectorAll('[role="dialog"]').forEach(modal => {
-        modal.addEventListener('click', event => {
-          if (event.target === modal) closeModal(modal.id);
-        });
-      });
-
-      document.addEventListener('keydown', event => {
-        const modal = document.querySelector('[role="dialog"]:not(.hidden)');
-        if (!modal) return;
-
-        if (event.key === 'Escape') {
-          closeModal(modal.id);
-          return;
-        }
-
-        if (event.key !== 'Tab') return;
-
-        const nodes = Array.from(
-          modal.querySelectorAll(
-            'button:not([disabled]), input:not([type="hidden"]):not([disabled]), ' +
-            'select:not([disabled]), textarea:not([disabled]), a[href]'
-          )
-        ).filter(node => node.getClientRects().length);
-
-        if (!nodes.length) return;
-
-        const first = nodes[0];
-        const last = nodes[nodes.length - 1];
-
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      });
-
-      try {
-        if (!window.supabase?.createClient) {
-          throw new Error('La bibliothèque Supabase n’a pas pu être chargée.');
-        }
-
-        db = window.supabase.createClient(
-          SUPABASE_URL,
-          SUPABASE_ANON_KEY,
-          {
-            auth: {
-              persistSession: true,
-              autoRefreshToken: true,
-              detectSessionInUrl: true
-            }
-          }
-        );
-
-        // Le callback reste synchrone ; les requêtes de données sont différées.
-        db.auth.onAuthStateChange((event, session) => {
-          applySession(session);
-        });
-
-        const { data, error } = await db.auth.getSession();
-        if (error) throw error;
-
-        applySession(data.session);
-        renderAll();
-      } catch (error) {
-        console.error('Initialisation :', error);
-        renderAll();
-        $('connectionStatus').textContent =
-          'Erreur de connexion : ' + error.message;
-        showAlert(error.message, 'ERROR');
       }
     });
-  </script>
+  } catch (error) {
+    console.error(error);
+    $('chartError').classList.remove('hidden');
+  }
+}
+function renderAll(){renderAuth();renderMetrics();renderBets();renderChart();}
+
+// COMBINÉS
+function matchKey(item){return [txt(item.date),txt(item.match).toLocaleLowerCase('fr-FR').replace(/\s+/g,' ')].join('|');}
+function comboSignature(){return JSON.stringify(comboSelections.map(s=>({key:matchKey(s),selection:s.selection,odds:s.comboOdds})));}
+function addToCombo(item){if(!requireReady())return;if(comboSelections.some(s=>matchKey(s)===matchKey(item))){showAlert('Cette rencontre est déjà dans le combiné. Une seule sélection par match.');return;}const has=typeof item.odds==='number'&&Number.isFinite(item.odds)&&item.odds>1;comboSelections.push({...item,comboOdds:has?item.odds.toFixed(2):''});renderCombo();showAlert('Sélection ajoutée au panier provisoire. Vérifiez sa cote.');}
+function clearCombo(){comboSelections=[];draftComboSignature=null;renderCombo();}
+function comboOdds(s){const raw=String(s.comboOdds||'').trim().replace(',','.');if(!raw)return null;const n=Number(raw);return Number.isFinite(n)&&n>1?n:null;}
+function totalComboOdds(){if(comboSelections.length<2)return null;let total=1;for(const s of comboSelections){const n=comboOdds(s);if(n===null)return null;total*=n;if(!Number.isFinite(total))return null;}return total;}
+function updateComboTotal(){const total=totalComboOdds();$('comboTotal').textContent=comboSelections.length<2?'Ajoutez au moins deux rencontres.':total===null?'Renseignez une cote valide pour chaque sélection.':'Produit indicatif des cotes : @'+total.toFixed(2);$('prepareComboBtn').disabled=total===null;}
+function renderCombo(){const box=$('comboItems');$('comboPanel').classList.toggle('hidden',!comboSelections.length);box.replaceChildren();comboSelections.forEach((s,i)=>{const row=node('div','bg-slate-900/70 rounded-xl p-4 space-y-3 min-w-0');row.append(node('p','text-sm font-bold break-any',s.match),node('p','text-xs text-amber-300 break-any',s.selection),node('p','text-[11px] text-slate-400',txt(s.date)+' · '+txt(s.time)));const controls=node('div','flex items-end gap-3'),field=node('div','flex-1 min-w-0'),label=node('label','label','Cote à vérifier');label.htmlFor='comboOdds_'+i;const input=node('input','field');input.id=label.htmlFor;input.type='number';input.min='1.01';input.step='0.01';input.placeholder='Ex. : 1.40';input.value=s.comboOdds;input.addEventListener('input',()=>{s.comboOdds=input.value;updateComboTotal();});field.append(label,input);const remove=node('button','btn danger shrink-0','Retirer');remove.type='button';remove.addEventListener('click',()=>{comboSelections.splice(i,1);renderCombo();});controls.append(field,remove);row.append(controls);box.append(row);});updateComboTotal();}
+function prepareCombinedBet(){if(!requireReady())return;const total=totalComboOdds();if(total===null){showAlert('Choisissez au moins deux rencontres et renseignez leurs cotes.','ERROR');return;}resetBetForm();$('betModalTitle').textContent='Enregistrer un combiné';$('betSport').value='Combiné';$('betOdds').value=total.toFixed(2);$('betStake').value='';$('betMatch').value=('Combiné de '+comboSelections.length+' rencontres — '+comboSelections.map(s=>s.match+' : '+s.selection).join(' | ')).slice(0,500);const details=comboSelections.map((s,i)=>[`${i+1}. ${s.match}`,'Date : '+txt(s.date),'Horaire : '+txt(s.time),'Compétition : '+txt(s.league),'Sélection : '+s.selection,'Cote renseignée : '+comboOdds(s).toFixed(2),'Analyse : '+txt(s.tip)].join('\n')).join('\n\n');const notes=['Combiné de propositions IA — vérifier chaque sélection.',details,'Produit indicatif des cotes : '+total.toFixed(2)+'.','Vérifier la cote finale et les règles du bookmaker. Aucune probabilité validée.'].join('\n\n');if(notes.length>$('betNotes').maxLength){showAlert('Les détails sont trop longs. Réduisez le nombre de sélections.','ERROR');return;}$('betNotes').value=notes;$('aiBetNotice').textContent='Vérifiez toutes les rencontres et la cote finale chez votre bookmaker. Choisissez la date de votre enregistrement et votre mise, puis confirmez.';$('aiBetNotice').classList.remove('hidden');draftComboSignature=comboSignature();openModal('betModal','betStake');}
+
+// IA
+function safeUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:null;}catch{return null;}}
+function createAiCard(item){const card=node('article','panel ai-card');const head=node('div','flex justify-between gap-3 items-start text-[11px]');head.append(node('span','text-blue-300 bg-blue-500/10 rounded px-2 py-1 break-any',txt(item.league,'Football')),node('span','text-slate-400 text-right shrink-0',txt(item.time,'Horaire à vérifier')));const content=node('div','space-y-3');content.append(head,node('h3','font-extrabold text-sm sm:text-base break-any',item.match),node('p','text-[11px] text-slate-400',txt(item.date)),node('p','ai-analysis',txt(item.tip,'Analyse non disponible.')));const footer=node('div','mt-auto border-t border-slate-700 pt-4 space-y-3');footer.append(node('p','text-[10px] uppercase text-slate-400','Piste d’analyse'),node('p','text-sm text-amber-300 font-bold break-any',item.selection));const has=typeof item.odds==='number'&&Number.isFinite(item.odds)&&item.odds>1;footer.append(node('p','text-xs text-slate-400',has?'Cote communiquée : @'+item.odds.toFixed(2)+' — à vérifier':'Cote à renseigner depuis votre bookmaker'),node('p','text-[11px] text-slate-500','Confiance non évaluée'));const buttons=node('div','grid grid-cols-1 gap-2');const single=node('button','btn primary w-full','Ajouter à mon journal');single.type='button';single.addEventListener('click',()=>addAiSuggestionToBet(item));const combo=node('button','btn soft w-full','Ajouter au combiné');combo.type='button';combo.addEventListener('click',()=>addToCombo(item));buttons.append(single,combo);footer.append(buttons);card.append(content,footer);return card;}
+function renderSources(data){const list=$('sourceList');list.replaceChildren();const seen=new Set();data.flatMap(x=>Array.isArray(x.searchSources)?x.searchSources:[]).forEach(s=>{const url=safeUrl(s.url);if(!url||seen.has(url))return;seen.add(url);const li=node('li'),a=node('a','text-blue-300 underline',txt(s.title,url));a.href=url;a.target='_blank';a.rel='noopener noreferrer';li.append(a);list.append(li);});$('searchSources').classList.toggle('hidden',seen.size===0);}
+async function generateAiSuggestions(){if(aiBusy)return;if(!db||!state.user){openAccount();showAlert('Connectez-vous pour utiliser l’assistant.');return;}const uid=state.user.id,version=++aiVersion,grid=$('aiSuggestionsGrid');aiBusy=true;$('refreshAiBtn').disabled=true;$('refreshAiBtn').textContent='Recherche en cours…';$('aiLastUpdate').classList.add('hidden');$('searchSources').classList.add('hidden');grid.setAttribute('aria-busy','true');grid.replaceChildren(node('p','col-span-full py-8 text-center text-amber-300 text-sm','Recherche de 6 à 8 rencontres vérifiables…'));const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),120000);try{const {data:sessionData,error:sessionError}=await db.auth.getSession();if(sessionError)throw sessionError;const token=sessionData.session?.access_token;if(!token)throw new Error('Session expirée. Reconnectez-vous.');if(sessionData.session.user.id!==uid)throw new Error('Le compte a changé. Relancez la recherche.');const response=await fetch('/api/pronos',{method:'POST',cache:'no-store',headers:{Accept:'application/json',Authorization:'Bearer '+token},signal:controller.signal});const raw=await response.text();let data;try{data=JSON.parse(raw);}catch{throw new Error(`Réponse serveur non JSON (HTTP ${response.status}). Consultez les journaux Vercel.`);}if(!response.ok)throw new Error(txt(data?.error,`Erreur HTTP ${response.status}.`));if(!Array.isArray(data)||data.some(x=>!x||!txt(x.match)||!txt(x.selection)))throw new Error('Format de réponse inattendu.');if(version!==aiVersion||state.user?.id!==uid)return;grid.replaceChildren();if(!data.length)grid.append(node('p','col-span-full text-center p-6 text-sm text-slate-400','Aucune rencontre à venir n’a pu être confirmée.'));else{data.slice(0,8).forEach(item=>grid.append(createAiCard(item)));if(data.length<6)grid.append(node('p','col-span-full text-xs text-amber-200 p-3 leading-relaxed','Moins de 6 propositions confirmables ont été retournées. Aucun match supplémentaire n’est inventé pour compléter la liste.'));}renderSources(data);$('aiLastUpdate').textContent='Réponse reçue le '+new Date().toLocaleString('fr-FR',{timeZone:'Europe/Paris'})+' (heure de Paris). Cet horaire indique la réception, pas la fraîcheur des informations sportives.';$('aiLastUpdate').classList.remove('hidden');}catch(e){if(version===aiVersion&&state.user?.id===uid)grid.replaceChildren(node('div','col-span-full rounded-xl p-4 bg-rose-950/50 border border-rose-500/30 text-rose-200 text-xs leading-relaxed',e.name==='AbortError'?'Le délai d’attente a été dépassé. Réessayez.':e.message));}finally{clearTimeout(timeout);aiBusy=false;$('refreshAiBtn').disabled=false;$('refreshAiBtn').textContent='Actualiser les matchs';grid.setAttribute('aria-busy','false');}}
+
+// ÉVÉNEMENTS
+function setup(){document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchMainTab(b.dataset.tab)));document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));$('hideAlertBtn').addEventListener('click',hideAlert);$('newBetBtn').addEventListener('click',openNewBet);$('configBtn').addEventListener('click',openConfig);$('accountBtn').addEventListener('click',openAccount);$('reloadDataBtn').addEventListener('click',()=>refreshUserData());$('authTabLogin').addEventListener('click',()=>switchAuthTab('LOGIN'));$('authTabSignup').addEventListener('click',()=>switchAuthTab('SIGNUP'));$('authForm').addEventListener('submit',handleAuthSubmit);$('logoutBtn').addEventListener('click',logout);$('betForm').addEventListener('submit',saveBet);$('configForm').addEventListener('submit',saveConfig);$('refreshAiBtn').addEventListener('click',generateAiSuggestions);$('prepareComboBtn').addEventListener('click',prepareCombinedBet);$('clearComboBtn').addEventListener('click',clearCombo);document.addEventListener('keydown',e=>{const m=document.querySelector('.modal:not(.hidden)');if(!m)return;if(e.key==='Escape'){closeModal(m.id);return;}if(e.key!=='Tab')return;const nodes=Array.from(m.querySelectorAll('button:not([disabled]),input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')).filter(x=>x.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&(document.activeElement===first||!m.contains(document.activeElement))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||!m.contains(document.activeElement))){e.preventDefault();first.focus();}});}
+document.addEventListener('DOMContentLoaded',async()=>{setup();switchAuthTab('LOGIN');switchMainTab('DASHBOARD');renderCombo();try{if(!window.supabase?.createClient)throw new Error('La bibliothèque Supabase n’a pas pu être chargée.');db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});let received=false;db.auth.onAuthStateChange((event,session)=>{received=true;applySession(session);});const {data,error}=await db.auth.getSession();if(error)throw error;if(!received)applySession(data.session);renderAll();}catch(e){console.error(e);renderAll();$('connectionStatus').textContent='Erreur : '+e.message;showAlert(e.message,'ERROR');}});
+</script>
 </body>
 </html>
