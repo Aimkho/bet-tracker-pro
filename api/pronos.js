@@ -1,100 +1,219 @@
 import { GoogleGenAI } from '@google/genai';
 
-export const config = { maxDuration: 120 };
+// Durée maximale demandée à Vercel.
+// La limite effective dépend de la configuration de ton projet.
+export const config = {
+  maxDuration: 120
+};
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
+  // Le HTML envoie une requête POST avec le jeton Supabase.
   if (req.method !== 'GET' && req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST');
-    return res.status(405).json({ error: 'Utilise GET ou POST.' });
-  }
 
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  const supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim();
-  const model = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
-
-  if (!apiKey || !supabaseUrl || !supabaseAnonKey) {
-    return res.status(500).json({
-      error: 'Configuration serveur incomplète : vérifie GEMINI_API_KEY, SUPABASE_URL et SUPABASE_ANON_KEY dans Vercel.'
+    return res.status(405).json({
+      error: 'Méthode non autorisée. Utilise GET ou POST.'
     });
   }
 
-  const authorization = req.headers.authorization;
-  if (typeof authorization !== 'string' || !/^Bearer\s+\S+$/i.test(authorization)) {
-    return res.status(401).json({ error: 'Connecte-toi pour utiliser l’assistant.' });
+  // CONFIGURATION SERVEUR
+
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+  const supabaseUrl = process.env.SUPABASE_URL
+    ?.trim()
+    .replace(/\/+$/, '');
+
+  const supabaseAnonKey =
+    process.env.SUPABASE_ANON_KEY?.trim();
+
+  const model =
+    process.env.GEMINI_MODEL?.trim() ||
+    'gemini-3.8-flash';
+
+  if (!apiKey || !supabaseUrl || !supabaseAnonKey) {
+    console.error('[pronos] Variables manquantes', {
+      GEMINI_API_KEY: Boolean(apiKey),
+      SUPABASE_URL: Boolean(supabaseUrl),
+      SUPABASE_ANON_KEY: Boolean(supabaseAnonKey)
+    });
+
+    return res.status(500).json({
+      error:
+        'Configuration serveur incomplète. Vérifie GEMINI_API_KEY, ' +
+        'SUPABASE_URL et SUPABASE_ANON_KEY dans Vercel, puis redéploie.'
+    });
   }
 
   try {
-    // Vérification serveur de la session : ne pas se fier au seul HTML.
-    const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { apikey: supabaseAnonKey, Authorization: authorization },
-      signal: AbortSignal.timeout(12000)
+    const url = new URL(supabaseUrl);
+
+    if (url.protocol !== 'https:') {
+      throw new Error('HTTPS requis.');
+    }
+  } catch {
+    return res.status(500).json({
+      error:
+        'SUPABASE_URL est invalide. Utilise l’URL HTTPS de ton projet Supabase.'
     });
+  }
+
+  // VÉRIFICATION DU JETON FOURNI PAR LE HTML
+
+  const authorization = req.headers.authorization;
+
+  if (
+    typeof authorization !== 'string' ||
+    !/^Bearer\s+\S+$/i.test(authorization)
+  ) {
+    return res.status(401).json({
+      error: 'Connecte-toi pour utiliser l’assistant IA.'
+    });
+  }
+
+  try {
+    // Vérification auprès de Supabase :
+    // on ne se contente pas de décoder le jeton dans le navigateur.
+    const authResponse = await fetch(
+      `${supabaseUrl}/auth/v1/user`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: authorization,
+          Accept: 'application/json'
+        },
+        signal: AbortSignal.timeout(12000)
+      }
+    );
 
     if (!authResponse.ok) {
-      return res.status(authResponse.status >= 500 ? 503 : 401).json({
-        error: authResponse.status >= 500
-          ? 'Le service de vérification de session est indisponible.'
-          : 'Session invalide ou expirée. Reconnecte-toi.'
+      if (authResponse.status === 429) {
+        return res.status(429).json({
+          error:
+            'Le service d’authentification reçoit trop de demandes. ' +
+            'Réessaie dans un moment.'
+        });
+      }
+
+      if (authResponse.status >= 500) {
+        return res.status(503).json({
+          error:
+            'Le service de vérification de session est temporairement indisponible.'
+        });
+      }
+
+      return res.status(401).json({
+        error:
+          'Session invalide ou expirée. Déconnecte-toi, puis reconnecte-toi.'
       });
     }
 
     const user = await authResponse.json();
+
     if (!user?.id) {
-      return res.status(401).json({ error: 'Session utilisateur invalide.' });
+      return res.status(401).json({
+        error: 'Aucune session utilisateur valide.'
+      });
     }
 
+    // DATE ET HEURE DE RÉFÉRENCE
+
     const now = new Date();
-    const dateISO = parisDate(now);
+
+    const dateISO = getParisDate(now);
+
     const dateStr = now.toLocaleDateString('fr-FR', {
-      timeZone: 'Europe/Paris', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      timeZone: 'Europe/Paris',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
+
     const timeStr = now.toLocaleTimeString('fr-FR', {
-      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false
+      timeZone: 'Europe/Paris',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
+
+    // CONSIGNES DONNÉES À GEMINI
 
     const prompt = `
-Tu es un assistant d'analyse de football. Tu ne garantis aucun résultat.
-Date actuelle : ${dateStr}, soit ${dateISO}.
-Heure actuelle : ${timeStr}, fuseau Europe/Paris.
+Tu es un assistant d'analyse de football.
+Tu fournis des pistes d'analyse, pas des garanties de gain.
 
-Utilise Google Search pour rechercher 6 à 8 RENCONTRES DIFFÉRENTES
-prévues aujourd'hui et qui n'ont pas encore commencé.
-Explore plusieurs compétitions si le calendrier et les sources le permettent.
+DATE ACTUELLE :
+${dateStr}, soit ${dateISO}.
 
-VÉRIFICATION :
-- Vérifie la date, la compétition et l'horaire de chaque rencontre.
+HEURE ACTUELLE :
+${timeStr}, fuseau Europe/Paris.
+
+MISSION :
+Utilise Google Search pour rechercher 6 à 8 rencontres de football
+différentes prévues aujourd'hui et qui n'ont pas encore commencé.
+
+Explore plusieurs compétitions et plusieurs pays si le calendrier
+et la qualité des informations disponibles le permettent.
+Ne te limite pas automatiquement aux championnats les plus connus.
+
+VÉRIFICATION DES RENCONTRES :
+- Vérifie la date, la compétition et l'horaire de chaque match.
+- Utilise le fuseau Europe/Paris pour les horaires affichés.
 - Exclue les matchs commencés, terminés, annulés ou reportés.
-- Ne complète jamais la liste avec des matchs inventés, d'une autre date
-  ou plusieurs propositions concernant une même rencontre.
-- Si moins de 6 matchs peuvent être confirmés, renvoie moins de 6 matchs.
+- Ne propose aucun match d'une autre date.
+- Ne présente pas un horaire ancien ou incertain comme confirmé.
+- Une seule proposition par rencontre.
+- Ne complète jamais la liste avec des rencontres inventées.
+- Ne répète pas une rencontre avec des variantes de sélection.
+- Si seulement 1 à 5 matchs peuvent être confirmés, renvoie ces matchs.
 - Si aucun match ne peut être confirmé, renvoie [].
 
-ANALYSE :
-- Une seule sélection par rencontre.
-- Compare les marchés pertinents, sans privilégier automatiquement une victoire.
-- Décris précisément la condition de gain et le périmètre du marché
-  (temps réglementaire, buts du match ou buts d'une équipe, etc.).
-- Appuie les arguments sur des faits récents effectivement trouvés.
-- Explique un facteur pouvant faire échouer chaque sélection.
-- Ne fabrique ni résultats récents, ni statistiques, ni absences.
-- Un favori ou une cote élevée ne suffit pas à établir une opportunité de valeur.
-- Ne promets pas que cette liste maximise les chances de gagner.
-- Ne calcule aucune probabilité de réussite non étayée.
+ANALYSE DES SÉLECTIONS :
+- Compare les marchés pertinents pour chaque rencontre.
+- Ne privilégie pas automatiquement la victoire d'un favori.
+- Explique précisément la condition nécessaire pour gagner.
+- Distingue les buts du match des buts d'une seule équipe.
+- Précise le périmètre du marché, notamment le temps réglementaire
+  lorsqu'il est applicable.
+- Base les arguments sur des faits récents réellement trouvés.
+- Explique au moins un facteur pouvant faire échouer la sélection.
+- Ne fabrique aucun résultat récent, statistique, classement,
+  joueur absent ou composition.
+- Si les informations sont limitées, indique cette limite dans tip.
+- Ne présente aucune sélection comme sûre, garantie ou sans risque.
+- N'affirme pas que ces propositions maximisent les chances de gagner.
+- Un favori ou une cote élevée ne suffit pas à établir un pari avantageux.
+- Ne prétends pas identifier une opportunité de valeur sans une
+  estimation de probabilité indépendante et étayée.
 
-COTES :
-- La recherche Web ne constitue pas un flux de cotes de bookmaker.
-- Pour cette version, renvoie toujours null pour odds.
-- L'utilisateur renseignera une cote vérifiée chez son bookmaker dans l'application.
+COTES ET CONFIANCE :
+- Cette application ne dispose pas ici d'un flux de cotes de bookmaker.
+- Renvoie toujours null pour odds.
+- N'invente aucune cote et ne donne aucune cote estimée.
+- L'utilisateur renseignera la cote vérifiée chez son bookmaker.
 - Renvoie toujours "Non évaluée" pour confidence.
+- N'invente aucun pourcentage de réussite.
 
-FORMAT : uniquement un tableau JSON valide, sans Markdown, avec au maximum 8 objets :
+COMBINÉS :
+- Renvoie uniquement les sélections individuelles dans ce tableau.
+- L'application permet à l'utilisateur de préparer son propre combiné.
+- Ne présente aucun regroupement de matchs comme plus sûr.
+- N'ajoute pas une sélection uniquement pour augmenter une cote totale.
+
+FORMAT DE SORTIE :
+Réponds uniquement avec un tableau JSON valide.
+N'ajoute ni texte avant ou après, ni bloc Markdown.
+Le tableau doit contenir au maximum 8 objets.
+
+Structure de chaque objet :
 [
   {
     "date": "${dateISO}",
-    "league": "Nom de la compétition",
+    "league": "Nom exact de la compétition",
     "match": "Équipe domicile vs Équipe extérieure",
     "time": "HH:MM (heure de Paris)",
     "selection": "Marché exact proposé",
@@ -105,136 +224,333 @@ FORMAT : uniquement un tableau JSON valide, sans Markdown, avec au maximum 8 obj
 ]
 `;
 
-    const ai = new GoogleGenAI({ apiKey });
+    // APPEL À GEMINI AVEC GOOGLE SEARCH
+
+    const ai = new GoogleGenAI({
+      apiKey
+    });
+
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }],
+        tools: [
+          {
+            googleSearch: {}
+          }
+        ],
         maxOutputTokens: 16384,
-        httpOptions: { timeout: 95000 }
+        httpOptions: {
+          timeout: 95000
+        }
       }
     });
 
     const candidate = response.candidates?.[0];
     const grounding = candidate?.groundingMetadata;
-    const sources = [];
-    const seenUrls = new Set();
 
-    for (const chunk of grounding?.groundingChunks || []) {
-      const web = chunk.web;
-      if (!web?.uri || !isWebUrl(web.uri) || seenUrls.has(web.uri)) continue;
-      seenUrls.add(web.uri);
-      sources.push({ title: web.title || 'Source', url: web.uri });
-    }
+    // Sources retournées par l'outil de recherche,
+    // et non liens inventés dans le texte du modèle.
+    const searchSources = extractSearchSources(grounding);
 
-    console.log('[pronos]', JSON.stringify({
-      receivedAt: new Date().toISOString(),
-      model,
-      finishReason: candidate?.finishReason,
-      searchQueries: grounding?.webSearchQueries || [],
-      sources
-    }));
+    console.log(
+      '[pronos] Résultat Gemini',
+      JSON.stringify({
+        responseReceivedAt: new Date().toISOString(),
+        model,
+        finishReason: candidate?.finishReason || null,
+        searchQueries: grounding?.webSearchQueries || [],
+        sources: searchSources
+      })
+    );
+
+    // RÉPONSE INTERROMPUE
 
     if (candidate?.finishReason === 'MAX_TOKENS') {
-      return res.status(502).json({ error: 'La réponse Gemini a été interrompue avant la fin. Réessaie.' });
+      return res.status(502).json({
+        error:
+          'La réponse de Gemini a été interrompue avant la fin. Réessaie.'
+      });
     }
 
-    const raw = typeof response.text === 'string' ? response.text.trim() : '';
-    if (!raw) {
-      return res.status(502).json({ error: 'Gemini n’a renvoyé aucun texte exploitable.' });
+    // Avec @google/genai, text est une propriété.
+    const rawText =
+      typeof response.text === 'string'
+        ? response.text.trim()
+        : '';
+
+    if (!rawText) {
+      console.warn('[pronos] Réponse vide', {
+        finishReason: candidate?.finishReason,
+        blockReason: response.promptFeedback?.blockReason
+      });
+
+      return res.status(502).json({
+        error:
+          'Gemini n’a renvoyé aucun texte exploitable. Réessaie.'
+      });
     }
+
+    // LECTURE DU JSON
 
     let parsed;
-    try {
-      parsed = parseArray(raw);
-    } catch {
-      return res.status(502).json({ error: 'Gemini n’a pas renvoyé un tableau JSON valide. Réessaie.' });
-    }
 
-    // Sans sources retournées, ne pas présenter les propositions comme documentées.
-    // L'absence de métadonnées ne prouve pas qu'aucune recherche n'a eu lieu.
-    if (parsed.length && !sources.length) {
+    try {
+      parsed = parseJsonArray(rawText);
+    } catch (error) {
+      console.warn('[pronos] JSON invalide', {
+        message: error.message
+      });
+
       return res.status(502).json({
-        error: 'Aucune source de recherche exploitable n’a été retournée. Les propositions ne sont pas affichées ; réessaie.'
+        error:
+          'Gemini a répondu, mais le résultat n’est pas un tableau JSON valide. Réessaie.'
       });
     }
 
-    const seenMatches = new Set();
+    // Sans source exploitable, ne pas afficher des propositions
+    // comme si elles étaient documentées.
+    // L'absence de métadonnées ne prouve toutefois pas qu'aucune
+    // recherche n'a eu lieu.
+    if (parsed.length > 0 && searchSources.length === 0) {
+      return res.status(502).json({
+        error:
+          'Aucune source de recherche exploitable n’a été retournée. ' +
+          'Les propositions ne sont pas affichées ; réessaie.'
+      });
+    }
+
+    // NETTOYAGE ET FORMAT ATTENDU PAR LE HTML
+
     const matches = [];
-    const checkedAt = new Date().toISOString();
+    const seenMatches = new Set();
+    const responseReceivedAt = new Date().toISOString();
 
     for (const item of parsed) {
-      if (!item || item.date !== dateISO || !cleanText(item.match) || !cleanText(item.selection)) continue;
-      const matchKey = item.match.trim().toLocaleLowerCase('fr-FR').replace(/\s+/g, ' ');
-      if (seenMatches.has(matchKey)) continue;
+      if (
+        !item ||
+        typeof item !== 'object' ||
+        Array.isArray(item)
+      ) {
+        continue;
+      }
+
+      const match = cleanText(item.match);
+      const selection = cleanText(item.selection);
+
+      // Contrôle de la date déclarée par le modèle.
+      if (
+        item.date !== dateISO ||
+        !match ||
+        !selection
+      ) {
+        continue;
+      }
+
+      const matchKey = match
+        .toLocaleLowerCase('fr-FR')
+        .replace(/\s+/g, ' ');
+
+      if (seenMatches.has(matchKey)) {
+        continue;
+      }
+
       seenMatches.add(matchKey);
+
       matches.push({
         date: dateISO,
-        league: cleanText(item.league) || 'Football',
-        match: item.match.trim(),
-        time: cleanText(item.time) || 'Horaire à vérifier',
-        selection: item.selection.trim(),
-        tip: cleanText(item.tip) || 'Informations insuffisantes pour détailler cette sélection.',
+        league:
+          cleanText(item.league) || 'Football',
+        match,
+        time:
+          cleanText(item.time) || 'Horaire à vérifier',
+        selection,
+        tip:
+          cleanText(item.tip) ||
+          'Informations insuffisantes pour détailler cette sélection.',
         odds: null,
         confidence: 'Non évaluée',
-        searchSources: sources,
-        responseReceivedAt: checkedAt
+        searchSources,
+        responseReceivedAt
       });
-      if (matches.length === 8) break;
+
+      if (matches.length === 8) {
+        break;
+      }
     }
 
-    // Le contrôle ci-dessus vérifie le format et les dates déclarées,
-    // pas indépendamment la vérité des rencontres et des horaires.
+    /*
+     * Ces contrôles vérifient le format, les doublons et la date
+     * déclarée. Ils ne valident pas indépendamment l'existence
+     * des rencontres ni l'exactitude des analyses.
+     *
+     * Pour une validation indépendante, il faut raccorder
+     * une source structurée de données sportives.
+     */
+
+    // IMPORTANT :
+    // Le HTML attend directement un tableau, pas { matches: [...] }.
     return res.status(200).json(matches);
+
   } catch (error) {
-    console.error('[pronos] Erreur', {
-      name: error?.name, status: error?.status, message: error?.message
+    console.error('[pronos] Erreur serveur', {
+      name: error?.name,
+      status: error?.status,
+      message: error?.message
     });
 
-    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-      return res.status(504).json({ error: 'Le service a mis trop de temps à répondre. Réessaie.' });
+    if (
+      error?.name === 'TimeoutError' ||
+      error?.name === 'AbortError'
+    ) {
+      return res.status(504).json({
+        error:
+          'Le service a mis trop de temps à répondre. Réessaie dans un moment.'
+      });
     }
 
     const status = Number(error?.status);
+
     if (status === 429) {
-      return res.status(429).json({ error: 'Quota ou limite de requêtes Gemini atteint. Réessaie plus tard et vérifie ta facturation.' });
+      return res.status(429).json({
+        error:
+          'Quota ou limite de requêtes Gemini atteint. ' +
+          'Réessaie plus tard et vérifie les quotas ainsi que la facturation.'
+      });
     }
+
     if (status === 404) {
-      return res.status(502).json({ error: 'Le modèle Gemini demandé est introuvable ou indisponible. Vérifie GEMINI_MODEL et les journaux Vercel.' });
+      return res.status(502).json({
+        error:
+          'Le modèle Gemini demandé est introuvable ou indisponible. ' +
+          'Vérifie GEMINI_MODEL et les journaux Vercel.'
+      });
     }
+
     if (status === 401 || status === 403) {
-      return res.status(502).json({ error: 'Accès Google refusé. Vérifie la clé Gemini, ses restrictions et les autorisations du projet.' });
+      return res.status(502).json({
+        error:
+          'Accès Google refusé. Vérifie la clé Gemini, ' +
+          'ses restrictions et les autorisations du projet.'
+      });
     }
-    return res.status(502).json({ error: 'Impossible de récupérer les analyses. Consulte les journaux Vercel pour le détail.' });
+
+    if (status === 400) {
+      return res.status(502).json({
+        error:
+          'Gemini a refusé les paramètres de la requête. ' +
+          'Consulte les journaux Vercel pour identifier le paramètre concerné.'
+      });
+    }
+
+    return res.status(502).json({
+      error:
+        'Impossible de récupérer les analyses. ' +
+        'Consulte les journaux Vercel pour le détail.'
+    });
   }
 }
 
+// FONCTIONS UTILITAIRES
+
 function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
+  return typeof value === 'string'
+    ? value.trim()
+    : '';
 }
 
 function isWebUrl(value) {
-  try { return ['https:', 'http:'].includes(new URL(value).protocol); }
-  catch { return false; }
-}
-
-function parisDate(date) {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit'
-  }).formatToParts(date).map(part => [part.type, part.value]));
-  return `${parts.year}-${parts.month}-${parts.day}`;
-}
-
-function parseArray(text) {
-  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-  let result;
-  try { result = JSON.parse(cleaned); }
-  catch {
-    const start = cleaned.indexOf('['), end = cleaned.lastIndexOf(']');
-    if (start < 0 || end <= start) throw new Error('Tableau introuvable');
-    result = JSON.parse(cleaned.slice(start, end + 1));
+  if (typeof value !== 'string') {
+    return false;
   }
-  if (!Array.isArray(result)) throw new Error('Tableau attendu');
-  return result;
+
+  try {
+    const url = new URL(value);
+
+    return ['https:', 'http:'].includes(
+      url.protocol
+    );
+  } catch {
+    return false;
+  }
+}
+
+function extractSearchSources(grounding) {
+  const sources = [];
+  const seen = new Set();
+
+  for (const chunk of grounding?.groundingChunks || []) {
+    const web = chunk.web;
+
+    if (
+      !web?.uri ||
+      !isWebUrl(web.uri) ||
+      seen.has(web.uri)
+    ) {
+      continue;
+    }
+
+    seen.add(web.uri);
+
+    sources.push({
+      title:
+        cleanText(web.title) || 'Source de recherche',
+      url: web.uri
+    });
+  }
+
+  return sources;
+}
+
+function getParisDate(date) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map(part => [
+      part.type,
+      part.value
+    ])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function parseJsonArray(text) {
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+
+  let parsed;
+
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf('[');
+    const end = cleaned.lastIndexOf(']');
+
+    if (start === -1 || end <= start) {
+      throw new Error(
+        'Aucun tableau JSON trouvé.'
+      );
+    }
+
+    parsed = JSON.parse(
+      cleaned.slice(start, end + 1)
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(
+      'La réponse doit être un tableau JSON.'
+    );
+  }
+
+  return parsed;
 }
