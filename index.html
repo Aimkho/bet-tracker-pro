@@ -3408,5 +3408,129 @@
       }
     );
   </script>
+<!-- DIAGNOSTIC DE L'API SPORTIVE -->
+<section
+  class="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-6"
+  aria-labelledby="footballTestTitle"
+>
+  <div class="panel p-4 sm:p-5 space-y-4">
+    <div>
+      <h2 id="footballTestTitle" class="text-sm font-bold">
+        Connexion aux données sportives
+      </h2>
+
+      <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+        Connectez-vous à BetTracker, puis cliquez sur le bouton
+        pour vérifier la connexion à API-Football.
+      </p>
+    </div>
+
+    <button
+      id="footballTestBtn"
+      type="button"
+      class="btn primary w-full sm:w-auto"
+      onclick="testFootballConnection()"
+    >
+      Tester l’API sportive
+    </button>
+
+    <pre
+      id="footballTestResult"
+      class="hidden whitespace-pre-wrap break-words bg-slate-950/60 rounded-xl p-4 text-xs text-slate-300 leading-relaxed"
+      role="status"
+      aria-live="polite"
+    ></pre>
+  </div>
+</section>
+
+<script>
+  async function testFootballConnection() {
+    const button = document.getElementById('footballTestBtn');
+    const result = document.getElementById('footballTestResult');
+
+    button.disabled = true;
+    button.textContent = 'Vérification en cours…';
+
+    result.classList.remove('hidden');
+    result.textContent = 'Connexion au serveur…';
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 35000);
+
+    try {
+      if (typeof db === 'undefined' || !db) {
+        throw new Error(
+          'Supabase n’est pas chargé. Actualisez la page et réessayez.'
+        );
+      }
+
+      const { data, error } = await db.auth.getSession();
+
+      if (error) throw error;
+
+      const token = data.session?.access_token;
+
+      if (!token) {
+        throw new Error(
+          'Connectez-vous à votre compte BetTracker, puis cliquez de nouveau.'
+        );
+      }
+
+      const response = await fetch('/api/football', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        signal: controller.signal
+      });
+
+      const raw = await response.text();
+      let diagnostic;
+
+      try {
+        diagnostic = JSON.parse(raw);
+      } catch {
+        throw new Error(
+          'Réponse non JSON — HTTP ' + response.status + '. ' +
+          'Vérifiez que le fichier api/football.js est présent et déployé.'
+        );
+      }
+
+      if (!response.ok || !diagnostic.ok) {
+        throw new Error(
+          diagnostic.error || 'Échec du test — HTTP ' + response.status
+        );
+      }
+
+      result.textContent = [
+        '✅ Connexion à API-Football réussie.',
+        '',
+        'Abonnement :',
+        JSON.stringify(diagnostic.subscription, null, 2),
+        '',
+        'Quota et consommation :',
+        JSON.stringify(diagnostic.requests, null, 2),
+        '',
+        'Ce test vérifie la connexion, pas encore l’accès aux matchs actuels.'
+      ].join('\n');
+
+    } catch (error) {
+      result.textContent =
+        '❌ ' +
+        (
+          error.name === 'AbortError'
+            ? 'Le délai d’attente est dépassé. Réessayez dans un moment.'
+            : error.message
+        );
+
+    } finally {
+      clearTimeout(timeout);
+
+      button.disabled = false;
+      button.textContent = 'Tester l’API sportive';
+    }
+  }
+</script>
 </body>
 </html>
