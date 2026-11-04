@@ -509,139 +509,189 @@
       </button>
     </div>
 
-    <!-- TABLEAU DE BORD -->
-    <section
-      id="dashboardSection"
-      class="space-y-4 sm:space-y-6"
-      aria-label="Tableau de bord"
+<!-- TABLEAU DE BORD -->
+<section
+  id="dashboardSection"
+  class="space-y-4 sm:space-y-6"
+  aria-label="Tableau de bord"
+>
+
+  <!-- ACCÈS AUX RÉSULTATS ET STATISTIQUES HISTORIQUES -->
+  <div class="panel p-4 sm:p-5">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
     >
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-
-        <div class="panel p-3 sm:p-5 min-w-0">
-          <p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">
-            Capital actuel
-          </p>
-
-          <p
-            id="metricCapital"
-            class="metric mt-2 break-any"
-          >
-            —
-          </p>
-
-          <p
-            id="metricInitialCapital"
-            class="text-[11px] text-slate-400 mt-2 break-any"
-          >
-            Départ : —
-          </p>
-
-          <p
-            id="metricAvailableCapital"
-            class="text-[11px] text-slate-400 mt-1 break-any"
-          >
-            Disponible : —
-          </p>
-        </div>
-
-        <div class="panel p-3 sm:p-5 min-w-0">
-          <p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">
-            Profit / perte
-          </p>
-
-          <p
-            id="metricProfit"
-            class="metric mt-2 break-any"
-          >
-            —
-          </p>
-        </div>
-
-        <div class="panel p-3 sm:p-5 min-w-0">
-          <p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">
-            Rendement des mises
-          </p>
-
-          <p
-            id="metricYield"
-            class="metric mt-2 text-blue-400 break-any"
-          >
-            —
-          </p>
-
-          <p class="text-[11px] text-slate-500 mt-2">
-            Sur les paris réglés
-          </p>
-        </div>
-
-        <div class="panel p-3 sm:p-5 min-w-0">
-          <p class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold">
-            Taux de réussite
-          </p>
-
-          <p
-            id="metricWinRate"
-            class="metric mt-2 text-indigo-400"
-          >
-            —
-          </p>
-        </div>
-      </div>
-
-      <div class="panel p-4 sm:p-5">
-        <h2 class="text-sm font-bold mb-4">
-          Évolution du capital
-        </h2>
-
-        <div class="h-52 sm:h-64 lg:h-72">
-          <canvas
-            id="bankrollChart"
-            role="img"
-            aria-label="Évolution du capital"
-          ></canvas>
-        </div>
-
-        <p
-          id="chartError"
-          class="hidden text-xs text-amber-300 mt-3"
-        >
-          Graphique indisponible.
-        </p>
-
-        <p class="text-[11px] text-slate-500 mt-3">
-          Reconstitution des paris réglés selon leur date renseignée.
-        </p>
-      </div>
-
-      <div class="panel overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-sm font-bold">
-            Journal de vos paris
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 class="text-sm sm:text-base font-bold">
+            Résultats et statistiques
           </h2>
 
-          <p
-            id="betCount"
-            class="text-xs text-slate-400"
-          ></p>
+          <span
+            class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-200 text-[10px] font-semibold"
+          >
+            Démonstration historique
+          </span>
         </div>
 
-        <table class="bet-table">
-          <thead>
-            <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Sport et sélection</th>
-              <th scope="col">Mise</th>
-              <th scope="col">Cote</th>
-              <th scope="col">Retour potentiel</th>
-              <th scope="col">Statut</th>
-              <th scope="col" class="right">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody id="betsTableBody"></tbody>
-        </table>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+          Consultez les rencontres historiques de Bundesliga et les
+          statistiques disponibles. Ces données ne sont pas des matchs
+          en direct et ne constituent pas des propositions du jour.
+        </p>
       </div>
-    </section>
+
+      <a
+        href="/historique.html"
+        class="btn primary w-full md:w-auto shrink-0 text-center"
+      >
+        Voir les résultats et statistiques
+      </a>
+    </div>
+  </div>
+
+  <!-- INDICATEURS -->
+  <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+
+    <div class="panel p-3 sm:p-5 min-w-0">
+      <p
+        class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold"
+      >
+        Capital actuel
+      </p>
+
+      <p
+        id="metricCapital"
+        class="metric mt-2 break-any"
+      >
+        —
+      </p>
+
+      <p
+        id="metricInitialCapital"
+        class="text-[11px] text-slate-400 mt-2 break-any"
+      >
+        Départ : —
+      </p>
+
+      <p
+        id="metricAvailableCapital"
+        class="text-[11px] text-slate-400 mt-1 break-any"
+      >
+        Disponible : —
+      </p>
+    </div>
+
+    <div class="panel p-3 sm:p-5 min-w-0">
+      <p
+        class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold"
+      >
+        Profit / perte
+      </p>
+
+      <p
+        id="metricProfit"
+        class="metric mt-2 break-any"
+      >
+        —
+      </p>
+    </div>
+
+    <div class="panel p-3 sm:p-5 min-w-0">
+      <p
+        class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold"
+      >
+        Rendement des mises
+      </p>
+
+      <p
+        id="metricYield"
+        class="metric mt-2 text-blue-400 break-any"
+      >
+        —
+      </p>
+
+      <p class="text-[11px] text-slate-500 mt-2">
+        Sur les paris réglés
+      </p>
+    </div>
+
+    <div class="panel p-3 sm:p-5 min-w-0">
+      <p
+        class="text-[10px] sm:text-xs uppercase text-slate-400 font-semibold"
+      >
+        Taux de réussite
+      </p>
+
+      <p
+        id="metricWinRate"
+        class="metric mt-2 text-indigo-400"
+      >
+        —
+      </p>
+    </div>
+
+  </div>
+
+  <!-- GRAPHIQUE -->
+  <div class="panel p-4 sm:p-5">
+    <h2 class="text-sm font-bold mb-4">
+      Évolution du capital
+    </h2>
+
+    <div class="h-52 sm:h-64 lg:h-72">
+      <canvas
+        id="bankrollChart"
+        role="img"
+        aria-label="Évolution du capital"
+      ></canvas>
+    </div>
+
+    <p
+      id="chartError"
+      class="hidden text-xs text-amber-300 mt-3"
+    >
+      Graphique indisponible.
+    </p>
+
+    <p class="text-[11px] text-slate-500 mt-3">
+      Reconstitution des paris réglés selon leur date renseignée.
+    </p>
+  </div>
+
+  <!-- JOURNAL DES PARIS -->
+  <div class="panel overflow-hidden">
+    <div
+      class="p-4 sm:p-5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2"
+    >
+      <h2 class="text-sm font-bold">
+        Journal de vos paris
+      </h2>
+
+      <p
+        id="betCount"
+        class="text-xs text-slate-400"
+      ></p>
+    </div>
+
+    <table class="bet-table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Sport et sélection</th>
+          <th scope="col">Mise</th>
+          <th scope="col">Cote</th>
+          <th scope="col">Retour potentiel</th>
+          <th scope="col">Statut</th>
+          <th scope="col" class="right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="betsTableBody"></tbody>
+    </table>
+  </div>
+
+</section>
 
     <!-- ASSISTANT IA -->
     <section
