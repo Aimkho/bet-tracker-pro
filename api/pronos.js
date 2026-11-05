@@ -42,6 +42,9 @@ export default async function handler(req, res) {
     stage = name;
     const start = Date.now();
     console.log('[pronos] Début', { stage: name });
+    if (name === 'recherche_google') {
+  console.log('[pronos] Modèle utilisé', { model: env('GEMINI_MODEL') });
+}
     try {
       return await operation();
     } finally {
