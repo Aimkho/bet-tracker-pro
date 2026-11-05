@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error:
         'SUPABASE_URL est invalide. Utilise uniquement l’URL HTTPS ' +
-        'de ton projet, par exemple https://ton-projet.supabase.co.'
+        'de ton projet, par exemple [https://ton-projet.supabase.co](https://ton-projet.supabase.co).'
     });
   }
 
@@ -154,7 +154,35 @@ export default async function handler(req, res) {
     });
 
     // --------------------------------------------------
-    // 4. PREMIER APPEL : RECHERCHE EN TEXTE
+    // 4. CONTEXTE PERSONNALISÉ : PARIS ET RÉSULTATS
+    // --------------------------------------------------
+
+    /*
+     * Ces données sont récupérées uniquement pour l'utilisateur authentifié.
+     * Elles ne contiennent aucune donnée pré-remplie : si l'historique
+     * est vide ou indisponible, le contexte indique simplement qu'il
+     * n'y a rien à exploiter.
+     */
+    const [betHistory, historicalResults] =
+      await Promise.all([
+        loadBetHistory({
+          supabaseUrl,
+          supabaseAnonKey,
+          authorization,
+          userId: user.id
+        }),
+        loadHistoricalResults({
+          authorization,
+          host: req.headers.host,
+          protocol:
+            req.headers['x-forwarded-proto'] === 'http'
+              ? 'http'
+              : 'https'
+        })
+      ]);
+
+    // --------------------------------------------------
+    // 5. PREMIER APPEL : RECHERCHE EN TEXTE
     // --------------------------------------------------
 
     const researchPrompt = `
@@ -184,6 +212,25 @@ VÉRIFICATION DES RENCONTRES :
 - Ne fabrique aucun match pour atteindre le nombre demandé.
 - Si moins de 6 rencontres sont confirmables, présente moins de matchs.
 - Si aucune rencontre n'est confirmable, indique-le clairement.
+
+HISTORIQUE DES PARIS DE L'UTILISATEUR :
+${betHistory}
+
+RÉSULTATS HISTORIQUES DISPONIBLES :
+${historicalResults}
+
+UTILISATION DU CONTEXTE PERSONNALISÉ :
+- Utilise ces données uniquement lorsqu'elles sont réellement
+  pertinentes pour une rencontre ou un marché analysé.
+- Ne les présente pas comme des preuves suffisantes à elles seules.
+- Ne fabrique aucune tendance, statistique ou conclusion absente
+  des données fournies ou des sources de recherche.
+- Si l'historique est vide, insuffisant ou non pertinent,
+  ne l'invoque pas et analyse la rencontre avec les informations
+  réellement disponibles.
+- Tu peux repérer des types de sélections déjà essayés par
+  l'utilisateur, ainsi que leurs résultats, sans inventer de
+  stratégie ou de taux de réussite.
 
 ANALYSE :
 - Compare les marchés pertinents pour chaque rencontre.
@@ -263,7 +310,12 @@ Appuie les informations factuelles sur les sources de recherche.
         finishReason:
           researchCandidate?.finishReason || null,
         searchQueries,
-        sources: searchSources
+        sources: searchSources,
+        betHistoryIncluded:
+          betHistory !== 'Aucun historique de paris réglé disponible.',
+        historicalResultsIncluded:
+          historicalResults !==
+          'Aucun résultat historique disponible.'
       })
     );
 
@@ -317,7 +369,7 @@ Appuie les informations factuelles sur les sources de recherche.
     }
 
     // --------------------------------------------------
-    // 5. DEUXIÈME APPEL : CONVERSION EN JSON
+    // 6. DEUXIÈME APPEL : CONVERSION EN JSON
     // --------------------------------------------------
 
     const formattingResponse =
@@ -413,7 +465,7 @@ STRUCTURE DE CHAQUE OBJET :
     }
 
     // --------------------------------------------------
-    // 6. NETTOYAGE ET FORMAT ATTENDU PAR LE HTML
+    // 7. NETTOYAGE ET FORMAT ATTENDU PAR LE HTML
     // --------------------------------------------------
 
     const matches = [];
@@ -545,6 +597,170 @@ STRUCTURE DE CHAQUE OBJET :
         'Impossible de récupérer les analyses. ' +
         'Consulte les journaux Vercel pour le détail.'
     });
+  }
+}
+
+// --------------------------------------------------
+// HISTORIQUE DES PARIS DE L'UTILISATEUR
+// --------------------------------------------------
+
+async function loadBetHistory({
+  supabaseUrl,
+  supabaseAnonKey,
+  authorization,
+  userId
+}) {
+  try {
+    const params = new URLSearchParams({
+      user_id: `eq.${userId}`,
+      status: 'in.(WON,LOST)',
+      order: 'date.desc,id.desc',
+      limit: '50'
+    });
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/bets?${params}`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: authorization,
+          Accept: 'application/json'
+        },
+        signal: AbortSignal.timeout(12000)
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('[pronos] Historique indisponible', {
+        status: response.status
+      });
+
+      return 'Aucun historique de paris réglé disponible.';
+    }
+
+    const bets = await response.json();
+
+    if (!Array.isArray(bets) || bets.length === 0) {
+      return 'Aucun historique de paris réglé disponible.';
+    }
+
+    const lines = bets.map(bet => {
+      const result =
+        bet.status === 'WON'
+          ? 'gagné'
+          : bet.status === 'LOST'
+            ? 'perdu'
+            : 'statut inconnu';
+
+      return [
+        bet.date || 'date inconnue',
+        bet.sport || 'sport inconnu',
+        bet.match || 'match inconnu',
+        `sélection : ${bet.match || 'non renseignée'}`,
+        `cote : ${
+          Number.isFinite(Number(bet.odds))
+            ? Number(bet.odds).toFixed(2)
+            : 'non renseignée'
+        }`,
+        `résultat : ${result}`
+      ].join(' | ');
+    });
+
+    return [
+      `${bets.length} dernier(s) pari(s) réglé(s) de cet utilisateur :`,
+      ...lines
+    ].join('\n');
+  } catch (error) {
+    console.warn('[pronos] Erreur historique paris', {
+      message: error?.message
+    });
+
+    return 'Aucun historique de paris réglé disponible.';
+  }
+}
+
+// --------------------------------------------------
+// RÉSULTATS HISTORIQUES DISPONIBLES
+// --------------------------------------------------
+
+async function loadHistoricalResults({
+  authorization,
+  host,
+  protocol
+}) {
+  try {
+    if (!host) {
+      return 'Aucun résultat historique disponible.';
+    }
+
+    const response = await fetch(
+      `${protocol}://${host}/api/football-demo?action=fixtures`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: authorization,
+          Accept: 'application/json'
+        },
+        signal: AbortSignal.timeout(20000)
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('[pronos] Résultats historiques indisponibles', {
+        status: response.status
+      });
+
+      return 'Aucun résultat historique disponible.';
+    }
+
+    const data = await response.json();
+    const fixtures = Array.isArray(data?.matches)
+      ? data.matches
+      : [];
+
+    const usable = fixtures
+      .filter(
+        fixture =>
+          fixture?.home?.name &&
+          fixture?.away?.name &&
+          fixture?.goals?.home != null &&
+          fixture?.goals?.away != null
+      )
+      .slice(0, 40);
+
+    if (!usable.length) {
+      return 'Aucun résultat historique disponible.';
+    }
+
+    const lines = usable.map(fixture => {
+      const date = fixture.date
+        ? new Date(fixture.date)
+            .toISOString()
+            .slice(0, 10)
+        : 'date inconnue';
+
+      return [
+        date,
+        fixture.home.name,
+        `${fixture.goals.home}-${fixture.goals.away}`,
+        fixture.away.name
+      ].join(' | ');
+    });
+
+    return [
+      `${usable.length} résultat(s) historique(s) disponible(s) :`,
+      ...lines
+    ].join('\n');
+  } catch (error) {
+    console.warn(
+      '[pronos] Erreur résultats historiques',
+      {
+        message: error?.message
+      }
+    );
+
+    return 'Aucun résultat historique disponible.';
   }
 }
 
