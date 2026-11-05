@@ -48,6 +48,9 @@ export default async function handler(req,res) {
     const headers={apikey:required('SUPABASE_ANON_KEY'),Authorization:authorization,Accept:'application/json'};
     const apiKey=required('GEMINI_API_KEY');
     const model=process.env.GEMINI_IMPORT_MODEL?.trim()||required('GEMINI_MODEL');
+    console.log('[import-coupon] Modèle utilisé', {
+  model: JSON.stringify(model)
+});
     const thinkingLevel=required('GEMINI_THINKING_LEVEL').toUpperCase();
     if(!['LOW','MEDIUM','HIGH'].includes(thinkingLevel))throw new ImportError(500,'GEMINI_THINKING_LEVEL invalide.','CONFIG_INVALID');
     stage='authentification';
