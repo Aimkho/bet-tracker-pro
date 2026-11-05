@@ -259,29 +259,85 @@ async function timedFetch(url, options, cap, scope) {
 }
 
 async function generate(ai, request, cap, scope) {
+  const thinkingLevel = process.env.GEMINI_THINKING_LEVEL
+    ?.trim()
+    .toUpperCase();
+
+  const allowedLevels = new Set([
+    'LOW',
+    'MEDIUM',
+    'HIGH'
+  ]);
+
+  if (!allowedLevels.has(thinkingLevel)) {
+    throw new RequestError(
+      500,
+      'Configure GEMINI_THINKING_LEVEL dans Vercel : LOW, MEDIUM ou HIGH.',
+      'THINKING_CONFIG_INVALID'
+    );
+  }
+
   const timeout = msRemaining(scope, cap);
-  const signal = AbortSignal.any([scope.signal, AbortSignal.timeout(timeout)]);
+
+  const signal = AbortSignal.any([
+    scope.signal,
+    AbortSignal.timeout(timeout)
+  ]);
+
   const operation = ai.models.generateContent({
     ...request,
     config: {
       ...request.config,
+
+      thinkingConfig: {
+        thinkingLevel
+      },
+
       abortSignal: signal,
-      httpOptions: { timeout, retryOptions: { attempts: 1 } }
+
+      httpOptions: {
+        timeout,
+        retryOptions: {
+          attempts: 1
+        }
+      }
     }
   });
-  // Le SDK reçoit aussi le signal ; la course borne l'attente côté fonction.
+
   let onAbort;
+
   const aborted = new Promise((_, reject) => {
     onAbort = () => {
-      const error = new Error('Délai de l’appel dépassé.');
+      const error = new Error(
+        'Délai de l’appel Gemini dépassé.'
+      );
+
       error.name = 'TimeoutError';
       reject(error);
     };
-    if (signal.aborted) onAbort();
-    else signal.addEventListener('abort', onAbort, { once: true });
+
+    if (signal.aborted) {
+      onAbort();
+    } else {
+      signal.addEventListener(
+        'abort',
+        onAbort,
+        { once: true }
+      );
+    }
   });
-  try { return await Promise.race([operation, aborted]); }
-  finally { signal.removeEventListener('abort', onAbort); }
+
+  try {
+    return await Promise.race([
+      operation,
+      aborted
+    ]);
+  } finally {
+    signal.removeEventListener(
+      'abort',
+      onAbort
+    );
+  }
 }
 
 async function loadBetHistory({ supabaseUrl, headers, userId, scope }) {
