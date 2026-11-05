@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
-  <meta name="theme-color" content="#020617">
+  <meta name="theme-color" content="#12071F">
 
   <title>BetTracker PRO</title>
 
@@ -41,7 +41,7 @@
 
     body {
       margin: 0;
-      background: #020617;
+      background: #12071F;
       color: #f1f5f9;
     }
 
@@ -65,13 +65,13 @@
     button:focus-visible,
     a:focus-visible,
     summary:focus-visible {
-      outline: 2px solid #60a5fa;
+      outline: 2px solid #A776FF;
       outline-offset: 3px;
     }
 
     .panel {
-      background: #172234;
-      border: 1px solid #29364a;
+      background: #24103A;
+      border: 1px solid #5B3575;
       border-radius: 18px;
     }
 
@@ -80,15 +80,15 @@
       min-width: 0;
       min-height: 46px;
       padding: 11px 12px;
-      border: 1px solid #475569;
+      border: 1px solid #754798;
       border-radius: 12px;
-      background: #0f172a;
+      background: #1B0B2C;
       color: #f8fafc;
       font-size: 16px;
     }
 
     .field:focus {
-      outline: 2px solid #3b82f6;
+      outline: 2px solid #791CF8;
       outline-offset: 2px;
     }
 
@@ -115,41 +115,41 @@
     }
 
     .primary {
-      background: #2563eb;
+      background: #6600FF;
       color: white;
     }
 
     .primary:hover {
-      background: #3b82f6;
+      background: #791CF8;
     }
 
     .secondary {
-      background: #253247;
-      border-color: #3b4a60;
+      background: #31164A;
+      border-color: #65417F;
       color: #e2e8f0;
     }
 
     .secondary:hover {
-      background: #334155;
+      background: #57346F;
     }
 
     .amber {
-      background: #f59e0b;
-      color: #0f172a;
+      background: #E73E01;
+      color: #1B0B2C;
     }
 
     .amber:hover {
-      background: #fbbf24;
+      background: #FF7440;
     }
 
     .danger {
-      background: #7f1d1d;
+      background: #BB0B0B;
       color: #fecaca;
     }
 
     .soft {
-      background: #312e81;
-      border-color: #4f46e5;
+      background: #460E84;
+      border-color: #791CF8;
       color: #e0e7ff;
     }
 
@@ -163,13 +163,13 @@
     }
 
     .tab.active {
-      background: #2563eb;
+      background: #6600FF;
       color: white;
     }
 
     .tab.ai.active {
-      background: #f59e0b;
-      color: #0f172a;
+      background: #E73E01;
+      color: #1B0B2C;
     }
 
     .modal {
@@ -215,7 +215,7 @@
 
     .bet-table th {
       padding: 14px 12px;
-      background: #0f172a;
+      background: #1B0B2C;
       color: #94a3b8;
       text-align: left;
       text-transform: uppercase;
@@ -224,7 +224,7 @@
 
     .bet-table td {
       padding: 14px 12px;
-      border-top: 1px solid #29364a;
+      border-top: 1px solid #5B3575;
       vertical-align: top;
     }
 
@@ -274,9 +274,9 @@
 
     .ai-analysis {
       padding: 12px;
-      border: 1px solid #26344a;
+      border: 1px solid #5B3575;
       border-radius: 12px;
-      background: #0f172a;
+      background: #1B0B2C;
       color: #cbd5e1;
       font-size: 13px;
       line-height: 1.65;
@@ -298,7 +298,7 @@
 
       .bet-table tr {
         padding: 14px;
-        border-top: 1px solid #334155;
+        border-top: 1px solid #57346F;
       }
 
       .bet-table td {
@@ -365,32 +365,45 @@
   </style>
 
 <style>
-:root{--bg:#070b14;--panel:#0f1826;--line:#22314a;--text:#eef3fb;--muted:#8fa0ba;--blue:#7ea6ff;--gold:#e8bd77;--green:#6fd8ab;--red:#f29aa8;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-body{background:radial-gradient(1200px 600px at 15% -10%,#12233f 0%,transparent 55%),radial-gradient(900px 500px at 95% 0%,#1a2a1f22 0%,transparent 60%),var(--bg)!important;color:var(--text)!important}
-.panel{background:linear-gradient(160deg,#121e30,#0e1725 75%)!important;border:1px solid #22314a!important;border-radius:18px!important;box-shadow:0 18px 45px #0006}
+:root{--bg:#12071F;--panel:#24103A;--line:#5B3575;--text:#eef3fb;--muted:#8fa0ba;--blue:#A776FF;--gold:#FFB09F;--green:#CBAAFF;--red:#FFADBE;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(1200px 600px at 15% -10%,#351052 0%,transparent 55%),radial-gradient(900px 500px at 95% 0%,#1a2a1f22 0%,transparent 60%),var(--bg)!important;color:var(--text)!important}
+.panel{background:linear-gradient(160deg,#28103E,#1B0B2C 75%)!important;border:1px solid #5B3575!important;border-radius:18px!important;box-shadow:0 18px 45px #0006}
 .btn{border-radius:12px!important;font-weight:650!important;transition:transform .12s ease,background .15s ease}.btn:active{transform:translateY(1px)}
-.primary{background:linear-gradient(180deg,#3a74e8,#2b5ec9)!important;border-color:#4a83f0!important;box-shadow:0 10px 28px #2563eb2e}
-.secondary{background:#17233a!important;border-color:#2f4260!important;color:#c9d8f0!important}
-.amber{background:linear-gradient(180deg,#d3a055,#b8853f)!important;border-color:#c99a58!important;color:#12182a!important}
-.soft{background:#1d2547!important;border-color:#414f8b!important;color:#c9d4ff!important}
-.danger{background:#3f1f2c!important;border-color:#6f3749!important;color:#ffc3ce!important}
-.tab{border-radius:10px!important;font-size:12px;font-weight:650;color:#8ea1bd}.tab.active{background:#22385c!important;color:#e8f0ff!important}.tab.ai.active{background:#4a3a1f!important;color:#f2d49c!important}
+.primary{background:linear-gradient(180deg,#791CF8,#6600FF)!important;border-color:#791CF8!important;box-shadow:0 10px 28px #2563eb2e}
+.secondary{background:#31164A!important;border-color:#65417F!important;color:#c9d8f0!important}
+.amber{background:linear-gradient(180deg,#E73E01,#C72C48)!important;border-color:#E73E01!important;color:#12182a!important}
+.soft{background:#460E84!important;border-color:#791CF8!important;color:#c9d4ff!important}
+.danger{background:#3A020D!important;border-color:#C72C48!important;color:#ffc3ce!important}
+.tab{border-radius:10px!important;font-size:12px;font-weight:650;color:#8ea1bd}.tab.active{background:#460E84!important;color:#e8f0ff!important}.tab.ai.active{background:#3A020D!important;color:#f2d49c!important}
 .metric{font-weight:800!important;letter-spacing:-1.2px!important;font-variant-numeric:tabular-nums}
-.bet-table th{font-size:9px!important;letter-spacing:.8px;color:#7d92b0!important;background:#0b1422!important;text-transform:uppercase}
-.bet-table td{border-color:#1e2c42!important;font-size:12px}.bet-table tr:hover td{background:#0d1726}
+.bet-table th{font-size:9px!important;letter-spacing:.8px;color:#7d92b0!important;background:#1B0B2C!important;text-transform:uppercase}
+.bet-table td{border-color:#5B3575!important;font-size:12px}.bet-table tr:hover td{background:#291039}
 .badge{border:1px solid #ffffff10;border-radius:7px!important;font-weight:600}
-.ai-card{background:linear-gradient(155deg,#15233a,#0e1725 80%)!important;border:1px solid #2a3c58!important;border-radius:18px!important;box-shadow:0 16px 40px #0005}.ai-card:hover{border-color:#3c5680}
-.ai-analysis{background:#0a1322!important;border-color:#1f2e46!important;border-radius:12px!important;font-size:12px!important;line-height:1.8!important;color:#a8b8d1!important}
-.field{background:#0a1322!important;border-color:#2f4260!important;border-radius:11px!important}.field:focus{outline:1px solid #7ea6ff!important;border-color:#7ea6ff!important}
+.ai-card{background:linear-gradient(155deg,#351052,#1B0B2C 80%)!important;border:1px solid #65417F!important;border-radius:18px!important;box-shadow:0 16px 40px #0005}.ai-card:hover{border-color:#791CF8}
+.ai-analysis{background:#1B0B2C!important;border-color:#5B3575!important;border-radius:12px!important;font-size:12px!important;line-height:1.8!important;color:#a8b8d1!important}
+.field{background:#1B0B2C!important;border-color:#65417F!important;border-radius:11px!important}.field:focus{outline:1px solid #A776FF!important;border-color:#A776FF!important}
 .label{font-size:11px!important;color:#a3b5cf!important;font-weight:650!important}
 .modal{background:#02060fd9!important;backdrop-filter:blur(10px)}
-.dialog{background:#101a2b!important;border:1px solid #2d4060!important;border-radius:20px!important;box-shadow:0 30px 90px #000a}
+.dialog{background:#24103A!important;border:1px solid #65417F!important;border-radius:20px!important;box-shadow:0 30px 90px #000a}
 #aiBetNotice{background:#3a2c1633!important;border:1px solid #66523866!important;color:#e3c694!important;border-radius:12px!important}
-#comboItems>div{background:#0b1424!important;border:1px solid #26364f!important;border-radius:14px!important}
-#comboTotal{color:#e8bd77!important;font-weight:750!important}
+#comboItems>div{background:#1B0B2C!important;border:1px solid #5B3575!important;border-radius:14px!important}
+#comboTotal{color:#FFB09F!important;font-weight:750!important}
 footer{color:#5f718c!important;font-size:10px!important}
 @media(max-width:767px){.panel{border-radius:16px!important}.btn{min-height:44px}.ai-card{padding:16px!important}}
 </style>
+
+<style id="bettracker-selection-theme">
+:root{--primary:#6600FF;--primary-hover:#791CF8;--wine:#3A020D;--orange:#E73E01;--rose:#C72C48;--danger:#BB0B0B}
+.primary{background:linear-gradient(135deg,var(--primary),var(--primary-hover))!important;border-color:var(--primary-hover)!important;box-shadow:0 8px 22px #6600ff33}
+.primary:hover{background:var(--primary-hover)!important}.amber{background:linear-gradient(135deg,var(--orange),var(--rose))!important;color:#fff!important;border-color:var(--orange)!important}
+.danger{background:var(--wine)!important;border-color:var(--rose)!important;color:#ffc2d0!important}.danger:hover{background:var(--danger)!important}
+.tab.active{background:var(--primary)!important;color:#fff!important}.tab.ai.active{background:linear-gradient(135deg,var(--wine),var(--rose))!important;color:#fff!important}
+.badge.won{background:#6600ff33;color:#ddcaff}.badge.lost{background:var(--wine);color:#ffbac9}.badge.pending{background:#E73E0122;color:#ffbea6}
+#betModal .dialog{max-width:740px}#betModal h2{font-size:21px}.selection-entry{display:grid;gap:14px}.selection-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.selection-heading h3{font-size:14px;font-weight:700}.selection-heading .btn{min-height:36px;padding:7px 11px;font-size:11px}
+.selection-hint{font-size:11px;line-height:1.7;color:#b8a4ca}.selection-card{padding:17px;border:1px solid #65417F;border-radius:14px;background:#1B0B2C;margin-top:12px}.selection-card:first-child{margin-top:0}.selection-number{color:#dcc8ff}.selection-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:17px}.selection-fields>div:nth-child(1),.selection-fields>div:nth-child(3),.selection-fields>div:nth-child(6){grid-column:1/-1}.selection-preview{font-size:11px;line-height:1.7;color:#dcc8ff;padding:11px 12px;background:#6600ff1a;border-radius:9px}.selection-preview:empty{display:none}#addSelectionRow{justify-self:start}#legacySelectionPanel.hidden,#selectionRows.hidden,#addSelectionRow.hidden{display:none!important}
+@media(max-width:540px){#betModal .dialog{padding:17px}.selection-card{padding:13px}.selection-fields{grid-template-columns:1fr}.selection-heading{align-items:flex-start}.selection-heading .btn{min-height:42px}.selection-entry .field{font-size:16px}}
+</style>
+
 </head>
 
 <body class="min-h-screen flex flex-col">
@@ -401,7 +414,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       <div class="flex items-center gap-2 sm:gap-3 min-w-0">
         <div
-          class="h-10 w-10 flex items-center justify-center rounded-xl bg-blue-600 text-xl font-bold shrink-0"
+          class="h-10 w-10 flex items-center justify-center rounded-xl bg-violet-600 text-xl font-bold shrink-0"
           aria-hidden="true"
         >
           ↗
@@ -410,13 +423,13 @@ footer{color:#5f718c!important;font-size:10px!important}
         <div>
           <h1 class="font-extrabold text-base sm:text-lg">
             BetTracker
-            <span class="text-xs text-blue-300 bg-blue-500/10 rounded px-1.5 py-1">
+            <span class="text-xs text-violet-300 bg-violet-500/10 rounded px-1.5 py-1">
               PRO
             </span>
           </h1>
 
           <p class="hidden sm:block text-xs text-slate-400">
-            Capital, paris et analyses IA
+            
           </p>
         </div>
       </div>
@@ -556,16 +569,14 @@ footer{color:#5f718c!important;font-size:10px!important}
           </h2>
 
           <span
-            class="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-200 text-[10px] font-semibold"
+            class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-200 text-[10px] font-semibold"
           >
-            Démonstration historique
+            Archives · pas de direct
           </span>
         </div>
 
         <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-          Consultez les rencontres historiques de Bundesliga et les
-          statistiques disponibles. Ces données ne sont pas des matchs
-          en direct et ne constituent pas des propositions du jour.
+          Résultats historiques et statistiques disponibles.
         </p>
       </div>
 
@@ -634,7 +645,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       <p
         id="metricYield"
-        class="metric mt-2 text-blue-400 break-any"
+        class="metric mt-2 text-violet-400 break-any"
       >
         —
       </p>
@@ -653,7 +664,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       <p
         id="metricWinRate"
-        class="metric mt-2 text-indigo-400"
+        class="metric mt-2 text-purple-400"
       >
         —
       </p>
@@ -677,7 +688,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
     <p
       id="chartError"
-      class="hidden text-xs text-amber-300 mt-3"
+      class="hidden text-xs text-orange-300 mt-3"
     >
       Graphique indisponible.
     </p>
@@ -749,7 +760,7 @@ footer{color:#5f718c!important;font-size:10px!important}
           </button>
         </div>
 
-        <p class="text-xs text-amber-200 bg-amber-500/5 border border-amber-500/20 p-3 rounded-xl leading-relaxed">
+        <p class="text-xs text-orange-200 bg-orange-500/5 border border-orange-500/20 p-3 rounded-xl leading-relaxed">
           Analyses indicatives, sans garantie de gain. L’assistant recherchera des informations publiques et s’appuiera sur les résultats disponibles ; vérifiez chaque sélection et cote.
         </p>
 
@@ -796,7 +807,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         class="hidden panel p-4 sm:p-6 space-y-4"
       >
         <div>
-          <h2 class="font-bold text-blue-300">
+          <h2 class="font-bold text-violet-300">
             Mon combiné en préparation
           </h2>
 
@@ -812,7 +823,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
         <p
           id="comboTotal"
-          class="text-sm font-bold text-amber-300 break-any"
+          class="text-sm font-bold text-orange-300 break-any"
         ></p>
 
         <p class="text-xs text-slate-400 leading-relaxed">
@@ -1004,7 +1015,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       <p
         id="aiBetNotice"
-        class="hidden text-xs text-amber-200 bg-amber-500/10 p-3 rounded-xl mb-4 leading-relaxed"
+        class="hidden text-xs text-orange-200 bg-orange-500/10 p-3 rounded-xl mb-4 leading-relaxed"
       ></p>
 
       <form id="betForm" class="space-y-4">
@@ -1023,18 +1034,13 @@ footer{color:#5f718c!important;font-size:10px!important}
           </select>
         </div>
 
-        <div>
-          <label class="label" for="betMatch">
-            Match / sélection
-          </label>
-
-          <input
-            id="betMatch"
-            class="field"
-            required
-            maxlength="500"
-            placeholder="Équipe A vs Équipe B — sélection"
-          >
+        <div class="selection-entry">
+          <div class="selection-heading"><h3>Sélections du pari</h3><button id="toggleSelectionMode" class="btn secondary" type="button">Saisie libre</button></div>
+          <p id="selectionModeHint" class="selection-hint">Un événement par fiche. Regroupez les conditions d’un MYCOMBI dans la même fiche.</p>
+          <div id="selectionRows"></div>
+          <button id="addSelectionRow" class="btn secondary" type="button">+ Ajouter une sélection</button>
+          <div id="legacySelectionPanel" class="hidden"><label class="label" for="betMatch">Match et sélection — texte à conserver ou modifier</label><textarea id="betMatch" class="field" rows="3" maxlength="500"></textarea></div>
+          <p id="selectionPreview" class="selection-preview" aria-live="polite"></p>
         </div>
 
         <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
@@ -1249,6 +1255,144 @@ footer{color:#5f718c!important;font-size:10px!important}
     let comboSelections = [];
     let draftComboSignature = null;
 
+
+    let selectionMode = false;
+    const SELECTION_MARKER = 'BETTRACKER_SELECTIONS_V1:';
+
+    function decodeSelections(notes) {
+      if (typeof notes !== 'string' || !notes.startsWith(SELECTION_MARKER)) return null;
+      try {
+        const end = notes.indexOf('\n');
+        if (end < 0) return null;
+        const parsed = JSON.parse(notes.slice(SELECTION_MARKER.length, end));
+        if (!Array.isArray(parsed) || !parsed.length || parsed.length > 40 || parsed.some(s =>
+          !s || typeof s.event !== 'string' || typeof s.market !== 'string' ||
+          typeof s.scope !== 'string' || typeof s.competition !== 'string' ||
+          typeof s.conditions !== 'string' || !(s.odds === null || typeof s.odds === 'number')
+        )) return null;
+        return { rows: parsed, notes: notes.slice(end + 1).replace(/^\n/, '') };
+      } catch { return null; }
+    }
+
+    function readableBetNotes(notes) {
+      const decoded = decodeSelections(notes);
+      if (!decoded) return notes;
+      const details = decoded.rows.map((s, i) => [
+        `${i + 1}. ${s.event}`, s.competition, s.market, s.scope,
+        s.conditions, s.odds === null ? '' : `Cote : ${s.odds}`
+      ].filter(Boolean).join('\n')).join('\n\n');
+      return [details, decoded.notes].filter(Boolean).join('\n\n');
+    }
+
+    function setSelectionMode(active) {
+      selectionMode = active;
+      $('selectionRows').classList.toggle('hidden', !active);
+      $('addSelectionRow').classList.toggle('hidden', !active);
+      $('legacySelectionPanel').classList.toggle('hidden', active);
+      $('toggleSelectionMode').textContent = active ? 'Saisie libre' : 'Saisie détaillée';
+      $('betMatch').required = !active;
+      $('selectionRows').querySelectorAll('[data-required]').forEach(input => { input.required = active; });
+      $('selectionModeHint').textContent = active
+        ? 'Un événement par fiche. Regroupez les conditions d’un MYCOMBI dans la même fiche.'
+        : 'Le texte existant est conservé sans tenter de deviner son découpage.';
+      updateSelectionPreview();
+    }
+
+    function selectionInput(labelText, key, value, required = false, multiline = false) {
+      const wrapper = node('div');
+      const input = node(multiline ? 'textarea' : 'input', 'field');
+      const id = 'selection_' + betId();
+      input.id = id;
+      input.dataset.key = key;
+      input.value = value == null ? '' : String(value);
+      if (multiline) input.rows = 2;
+      else if (key === 'odds') { input.type = 'number'; input.min = '1'; input.step = '0.01'; }
+      else { input.type = 'text'; input.maxLength = key === 'event' ? 250 : 600; }
+      if (multiline) input.maxLength = 3000;
+      if (required) { input.dataset.required = 'true'; input.required = selectionMode; }
+      const label = node('label', 'label', labelText);
+      label.htmlFor = id;
+      input.addEventListener('input', updateSelectionPreview);
+      wrapper.append(label, input);
+      return wrapper;
+    }
+
+    function addSelectionEditor(data = {}) {
+      if ($('selectionRows').children.length >= 40) { showAlert('Maximum 40 sélections.', 'ERROR'); return; }
+      const row = node('div', 'selection-card');
+      const head = node('div', 'selection-heading');
+      const number = node('h3', 'selection-number');
+      const remove = node('button', 'btn danger', 'Retirer');
+      remove.type = 'button';
+      remove.addEventListener('click', () => {
+        if ($('selectionRows').children.length === 1) { showAlert('Conservez au moins une sélection.'); return; }
+        row.remove(); renumberSelectionEditors(); updateSelectionPreview();
+      });
+      head.append(number, remove);
+      const fields = node('div', 'selection-fields');
+      fields.append(
+        selectionInput('Match / événement', 'event', data.event, true),
+        selectionInput('Compétition — facultatif', 'competition', data.competition),
+        selectionInput('Marché et choix exact', 'market', data.market, true, true),
+        selectionInput('Période / périmètre — si indiqué', 'scope', data.scope),
+        selectionInput('Cote individuelle — facultatif', 'odds', data.odds),
+        selectionInput('Autres conditions du même pari — facultatif', 'conditions', data.conditions, false, true)
+      );
+      row.append(head, fields);
+      $('selectionRows').append(row);
+      renumberSelectionEditors(); updateSelectionPreview();
+    }
+
+    function renumberSelectionEditors() {
+      $('selectionRows').querySelectorAll('.selection-number').forEach((h, i) => { h.textContent = `Sélection ${i + 1}`; });
+    }
+
+    function collectSelections() {
+      return Array.from($('selectionRows').children).map(row => {
+        const get = key => row.querySelector(`[data-key="${key}"]`).value.trim();
+        const oddsText = get('odds');
+        return {
+          event: get('event'), competition: get('competition'), market: get('market'),
+          scope: get('scope'), conditions: get('conditions'),
+          odds: oddsText ? Number(oddsText) : null
+        };
+      });
+    }
+
+    function updateSelectionPreview() {
+      if (!selectionMode) { $('selectionPreview').textContent = ''; return; }
+      const rows = collectSelections();
+      $('selectionPreview').textContent = rows.length > 1
+        ? `Combiné · ${rows.length} sélections · la cote totale reste à vérifier sur le coupon.`
+        : 'Pari simple · 1 sélection';
+    }
+
+    function prepareDetailedSelection() {
+      if (!selectionMode) return true;
+      const rows = collectSelections();
+      if (!rows.length || rows.some(s => !s.event || !s.market ||
+          s.odds !== null && (!Number.isFinite(s.odds) || s.odds < 1))) {
+        showAlert('Renseignez chaque événement et son marché exact ; vérifiez les cotes.', 'ERROR');
+        return false;
+      }
+      if (rows.length > 1 && $('betSport').value !== 'Combiné') {
+        showAlert('Choisissez « Combiné » dans le type de pari pour enregistrer plusieurs sélections.', 'ERROR');
+        $('betSport').focus(); return false;
+      }
+      const combined = rows.map(s => `${s.event} — ${s.market}`).join(' | ');
+      if (rows.length === 1 && combined.length > 500) {
+        showAlert('Le résumé événement + marché dépasse 500 caractères. Raccourcissez ces deux champs.', 'ERROR'); return false;
+      }
+      $('betMatch').value = combined.length <= 500 ? combined : `Combiné · ${rows.length} sélections — détails dans les notes`;
+      return true;
+    }
+
+    function notesForStorage() {
+      if (!selectionMode) return $('betNotes').value.trim();
+      return SELECTION_MARKER + JSON.stringify(collectSelections()) + '\n\n' + $('betNotes').value.trim();
+    }
+
+
     // OUTILS
 
     function node(tag, classes = '', value) {
@@ -1335,9 +1479,9 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       const styles = {
         INFO:
-          'bg-blue-950/80 border-blue-500/30 text-blue-200',
+          'bg-violet-950/80 border-violet-500/30 text-violet-200',
         SUCCESS:
-          'bg-emerald-950/80 border-emerald-500/30 text-emerald-200',
+          'bg-violet-950/80 border-violet-500/30 text-violet-200',
         ERROR:
           'bg-rose-950/80 border-rose-500/30 text-rose-200'
       };
@@ -1365,7 +1509,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         (
           error
             ? 'bg-rose-500/10 text-rose-200'
-            : 'bg-blue-500/10 text-blue-200'
+            : 'bg-violet-500/10 text-violet-200'
         );
     }
 
@@ -1912,6 +2056,9 @@ footer{color:#5f718c!important;font-size:10px!important}
       draftComboSignature = null;
 
       $('betForm').reset();
+      $('selectionRows').replaceChildren();
+      setSelectionMode(true);
+      addSelectionEditor();
       $('betId').value = '';
       $('betDate').value = parisDate();
       $('betStatus').value = 'PENDING';
@@ -1926,7 +2073,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       if (!requireReady()) return;
 
       resetBetForm();
-      openModal('betModal', 'betMatch');
+      openModal('betModal', $('selectionRows').querySelector('input')?.id);
     }
 
     function addAiSuggestionToBet(item) {
@@ -1934,6 +2081,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       resetBetForm();
 
+      setSelectionMode(false);
       $('betModalTitle').textContent =
         'Ajouter une proposition IA';
 
@@ -2009,7 +2157,13 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('betOdds').value = bet.odds;
       $('betDate').value = bet.date;
       $('betStatus').value = bet.status;
-      $('betNotes').value = bet.notes || '';
+      const detailed = decodeSelections(bet.notes);
+      $('betNotes').value = detailed ? detailed.notes : (bet.notes || '');
+      if (detailed) {
+        $('selectionRows').replaceChildren();
+        setSelectionMode(true);
+        detailed.rows.forEach(addSelectionEditor);
+      } else setSelectionMode(false);
 
       $('betModalTitle').textContent =
         'Modifier le pari';
@@ -2025,6 +2179,12 @@ footer{color:#5f718c!important;font-size:10px!important}
       const userId = state.user.id;
       const existingId = $('betId').value;
       const signature = draftComboSignature;
+      if (!prepareDetailedSelection()) return;
+      const storedNotes = notesForStorage();
+      if (storedNotes.length > $('betNotes').maxLength) {
+        showAlert('Les détails du pari sont trop longs pour être enregistrés.', 'ERROR');
+        return;
+      }
 
       const bet = {
         date: $('betDate').value,
@@ -2033,7 +2193,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         stake: Number($('betStake').value),
         odds: Number($('betOdds').value),
         status: $('betStatus').value,
-        notes: $('betNotes').value.trim()
+        notes: storedNotes
       };
 
       if (
@@ -2312,7 +2472,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         'metric mt-2 break-any ' +
         (
           totalProfit >= 0
-            ? 'text-emerald-400'
+            ? 'text-violet-400'
             : 'text-rose-400'
         );
 
@@ -2414,13 +2574,13 @@ footer{color:#5f718c!important;font-size:10px!important}
           details.append(
             node(
               'summary',
-              'text-xs text-blue-400 cursor-pointer',
+              'text-xs text-violet-400 cursor-pointer',
               'Voir les notes'
             ),
             node(
               'p',
               'notes',
-              bet.notes
+              readableBetNotes(bet.notes)
             )
           );
 
@@ -2466,7 +2626,7 @@ footer{color:#5f718c!important;font-size:10px!important}
           cell(
             'Retour potentiel',
             money(bet.stake * bet.odds),
-            'text-emerald-300'
+            'text-violet-300'
           ),
           cell(
             'Statut',
@@ -2529,9 +2689,9 @@ footer{color:#5f718c!important;font-size:10px!important}
                 {
                   label: 'Capital ($)',
                   data: values,
-                  borderColor: '#3b82f6',
+                  borderColor: '#791CF8',
                   backgroundColor:
-                    'rgba(59,130,246,.1)',
+                    'rgba(102,0,255,.14)',
                   fill: true,
                   tension: 0.2,
                   borderWidth: 3,
@@ -2724,7 +2884,7 @@ footer{color:#5f718c!important;font-size:10px!important}
             ),
             node(
               'p',
-              'text-xs text-amber-300 break-any',
+              'text-xs text-orange-300 break-any',
               selection.selection
             ),
             node(
@@ -2819,6 +2979,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       resetBetForm();
 
+      setSelectionMode(false);
       $('betModalTitle').textContent =
         'Enregistrer un combiné';
 
@@ -2916,7 +3077,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       header.append(
         node(
           'span',
-          'text-blue-300 bg-blue-500/10 rounded px-2 py-1 break-any',
+          'text-violet-300 bg-violet-500/10 rounded px-2 py-1 break-any',
           txt(item.league, 'Football')
         ),
         node(
@@ -2966,7 +3127,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         ),
         node(
           'p',
-          'text-sm text-amber-300 font-bold break-any',
+          'text-sm text-orange-300 font-bold break-any',
           item.selection
         )
       );
@@ -3060,7 +3221,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
         const link = node(
           'a',
-          'text-blue-300 underline',
+          'text-violet-300 underline',
           txt(source.title, url)
         );
 
@@ -3110,7 +3271,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       grid.replaceChildren(
         node(
           'p',
-          'col-span-full py-8 text-center text-amber-300 text-sm',
+          'col-span-full py-8 text-center text-orange-300 text-sm',
           'Recherche de 6 à 8 rencontres vérifiables…'
         )
       );
@@ -3223,7 +3384,7 @@ footer{color:#5f718c!important;font-size:10px!important}
             grid.append(
               node(
                 'p',
-                'col-span-full text-xs text-amber-200 p-3 leading-relaxed',
+                'col-span-full text-xs text-orange-200 p-3 leading-relaxed',
                 'Moins de 6 propositions ont été retournées. ' +
                 'Aucun match supplémentaire n’est inventé pour compléter la liste.'
               )
@@ -3277,6 +3438,16 @@ footer{color:#5f718c!important;font-size:10px!important}
     // ÉVÉNEMENTS ET ACCESSIBILITÉ
 
     function setup() {
+      $('addSelectionRow').addEventListener('click', () => addSelectionEditor());
+      $('toggleSelectionMode').addEventListener('click', () => {
+        if (selectionMode) {
+          if (!prepareDetailedSelection()) return;
+          $('betNotes').value = readableBetNotes(notesForStorage());
+        }
+        setSelectionMode(!selectionMode);
+      });
+
+
       document
         .querySelectorAll('[data-tab]')
         .forEach(button => {
