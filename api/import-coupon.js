@@ -107,7 +107,18 @@ Au maximum ${LIMITS.selections} sélections. Une réponse JSON conforme au sché
     console.log('[import-coupon] Extraction terminée',{durationMs:Date.now()-start,selectionCount:draft.selections.length});
     return res.status(200).json({draft,sourceUrl,sourceUrlRead:false,requiresReview:true,saved:false,extractedAt:new Date().toISOString()});
   }catch(error){
-    console.error('[import-coupon] Erreur',{stage,name:error?.name,status:Number(error?.status)||null,code:error?.code||null});
+    console.error('[import-coupon] Erreur', {
+  stage,
+  name: error?.name,
+  status: Number(error?.status) || null,
+  code: error?.code || null,
+  message: String(
+    error?.message || 'Aucun détail fourni'
+  )
+    .replace(/AIza[0-9A-Za-z_-]+/g, '[CLE_MASQUEE]')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [JETON_MASQUE]')
+    .slice(0, 6000)
+});
     if(error instanceof ImportError)return res.status(error.status).json({error:error.message,code:error.code,stage});
     if(controller.signal.aborted||['AbortError','TimeoutError'].includes(error?.name)||Number(error?.status)===504)return res.status(504).json({error:'Délai d’extraction dépassé. Aucun pari enregistré.',code:'TIMEOUT',stage});
     return res.status(Number(error?.status)===429?429:502).json({error:Number(error?.status)===429?'Quota Gemini atteint. Réessaie plus tard.':'Extraction indisponible. Vérifie le modèle et les journaux serveur.',code:'EXTRACTION_FAILED',stage});
