@@ -404,6 +404,11 @@ footer{color:#5f718c!important;font-size:10px!important}
 @media(max-width:540px){#betModal .dialog{padding:17px}.selection-card{padding:13px}.selection-fields{grid-template-columns:1fr}.selection-heading{align-items:flex-start}.selection-heading .btn{min-height:42px}.selection-entry .field{font-size:16px}}
 </style>
 
+
+<style>
+.import-dialog{max-width:700px}.import-review{padding:15px;border:1px solid #791CF8;border-radius:13px;background:#6600ff12}.import-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.import-check{display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.7;color:#dfcfea}.import-check input{margin-top:5px;width:17px;height:17px;flex-shrink:0;accent-color:#791CF8}.import-message{padding:12px;border:1px solid #65417F;border-radius:10px;font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}.import-message.error{background:#3A020D;border-color:#C72C48;color:#ffd1da}.import-previews{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.import-previews img{width:85px;height:105px;object-fit:contain;border:1px solid #65417F;border-radius:8px;background:#180922}.import-warnings{color:#ffb8a4;font-size:11px;line-height:1.8;list-style:disc;padding-left:20px}.imported-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.imported-card{border:1px solid #65417F;background:#1B0B2C;padding:17px;border-radius:14px;min-width:0;overflow-wrap:anywhere}.imported-card h3{font-size:14px;font-weight:700}.imported-card p{font-size:12px;line-height:1.8;margin-top:8px;color:#dac9e8}.imported-card pre{font-family:inherit;white-space:pre-wrap;font-size:11px;line-height:1.8;color:#bba4ca;margin-top:12px}.imported-card .btn{font-size:11px;min-height:38px}.imported-empty{font-size:12px;line-height:1.8;color:#bba4ca;grid-column:1/-1}.imported-meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+@media(max-width:600px){.import-two,.imported-list{grid-template-columns:1fr}.import-review{padding:12px}.import-dialog{padding:17px!important}}
+</style>
 </head>
 
 <body class="min-h-screen flex flex-col">
@@ -707,6 +712,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         Journal de vos paris
       </h2>
 
+      <button id="openCouponImport" class="btn soft" type="button">Importer un coupon</button>
       <p
         id="betCount"
         class="text-xs text-slate-400"
@@ -729,6 +735,12 @@ footer{color:#5f718c!important;font-size:10px!important}
       <tbody id="betsTableBody"></tbody>
     </table>
   </div>
+
+<section class="panel p-4 sm:p-5 space-y-4" aria-labelledby="importedCouponsTitle">
+ <div class="selection-heading"><h2 id="importedCouponsTitle">Coupons importés</h2><button id="reloadImportedCoupons" type="button" class="btn secondary">Actualiser</button></div>
+ <p class="selection-hint">Montants conservés dans la devise du coupon. Ces coupons sont exclus du capital, du graphique et des indicateurs ci-dessus. Aucun pari n’est placé chez le bookmaker.</p>
+ <div id="importedCouponsList" class="imported-list" aria-live="polite"></div>
+</section>
 
 </section>
 
@@ -855,6 +867,22 @@ footer{color:#5f718c!important;font-size:10px!important}
     Données enregistrées dans Supabase.
     Analyses indicatives, sans garantie de gain.
   </footer>
+
+
+<div id="couponImportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="couponImportTitle">
+ <div class="dialog panel import-dialog">
+  <div class="selection-heading"><h2 id="couponImportTitle">Importer un coupon</h2><button class="btn secondary" data-close="couponImportModal" type="button" aria-label="Fermer">×</button></div>
+  <form id="couponImportForm" class="space-y-4 mt-4">
+   <p class="selection-hint">Betclic ou Winamax : jusqu’à 3 captures du même coupon, ou son texte détaillé. Vérifiez les informations avant l’enregistrement.</p>
+   <div><label class="label" for="couponImportImages">Captures JPEG, PNG ou WebP</label><input id="couponImportImages" class="field" type="file" accept="image/jpeg,image/png,image/webp" multiple><div id="couponImagePreviews" class="import-previews"></div></div>
+   <div><label class="label" for="couponImportText">Texte du coupon</label><textarea id="couponImportText" class="field" rows="5" maxlength="18000"></textarea></div>
+   <div><label class="label" for="couponImportUrl">Lien de référence — facultatif</label><input id="couponImportUrl" class="field" type="url" maxlength="2500"><p class="selection-hint">Le lien est conservé, pas téléchargé. Un lien seul ne suffit pas.</p></div>
+   <label class="import-check"><input id="couponImportConsent" type="checkbox" required><span>J’accepte d’envoyer ce texte et ces captures à Gemini pour extraction. Je peux masquer les données personnelles inutiles avant l’envoi.</span></label>
+   <div id="couponImportMessage" class="import-message hidden" role="status" aria-live="polite"></div>
+   <button id="couponExtractButton" class="btn primary" type="submit">Extraire et vérifier</button>
+  </form>
+ </div>
+</div>
 
   <!-- MODALE AUTHENTIFICATION -->
   <div
@@ -1020,6 +1048,21 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       <form id="betForm" class="space-y-4">
         <input id="betId" type="hidden">
+<div id="importReviewPanel" class="import-review hidden space-y-4">
+ <p class="selection-hint">Coupon importé : relisez chaque sélection. Il sera enregistré séparément et ne modifiera pas le capital actuel.</p>
+ <div class="import-two">
+  <div><label class="label" for="importBookmaker">Bookmaker</label><input id="importBookmaker" class="field" maxlength="150"></div>
+  <div><label class="label" for="importReference">Référence — facultatif</label><input id="importReference" class="field" maxlength="250"></div>
+  <div><label class="label" for="importCurrency">Devise du coupon — code ISO</label><input id="importCurrency" class="field" maxlength="3" pattern="[A-Za-z]{3}" autocomplete="off"></div>
+  <div><label class="label" for="importPotentialReturn">Retour potentiel affiché — facultatif</label><input id="importPotentialReturn" class="field" type="number" min="0" step="0.01"></div>
+ </div>
+ <div><label class="label" for="importSourceUrl">Lien de référence — non téléchargé</label><input id="importSourceUrl" class="field" type="url" maxlength="2500"></div>
+ <div id="importExtractedFacts" class="selection-hint"></div>
+ <ul id="importWarnings" class="import-warnings"></ul>
+ <label class="import-check"><input id="importPlacementConfirmed" type="checkbox"><span>Je confirme que ce coupon correspond à un pari réellement validé, pas seulement à un coupon à copier.</span></label>
+ <label class="import-check"><input id="importReviewConfirmed" type="checkbox"><span>J’ai vérifié les sélections, la date de validation, le statut, les montants et la devise.</span></label>
+</div>
+
 
         <div>
           <label class="label" for="betSport">
@@ -1278,7 +1321,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       const decoded = decodeSelections(notes);
       if (!decoded) return notes;
       const details = decoded.rows.map((s, i) => [
-        `${i + 1}. ${s.event}`, s.competition, s.market, s.scope,
+        `${i + 1}. ${s.event}`, s.competition, s.eventDate, s.eventTime, s.market, s.scope,
         s.conditions, s.odds === null ? '' : `Cote : ${s.odds}`
       ].filter(Boolean).join('\n')).join('\n\n');
       return [details, decoded.notes].filter(Boolean).join('\n\n');
@@ -1333,6 +1376,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       fields.append(
         selectionInput('Match / événement', 'event', data.event, true),
         selectionInput('Compétition — facultatif', 'competition', data.competition),
+        selectionInput('Date du match — si indiquée', 'eventDate', data.eventDate),
+        selectionInput('Horaire du match — si indiqué', 'eventTime', data.eventTime),
         selectionInput('Marché et choix exact', 'market', data.market, true, true),
         selectionInput('Période / périmètre — si indiqué', 'scope', data.scope),
         selectionInput('Cote individuelle — facultatif', 'odds', data.odds),
@@ -1352,7 +1397,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         const get = key => row.querySelector(`[data-key="${key}"]`).value.trim();
         const oddsText = get('odds');
         return {
-          event: get('event'), competition: get('competition'), market: get('market'),
+          event: get('event'), competition: get('competition'), eventDate: get('eventDate'), eventTime: get('eventTime'), market: get('market'),
           scope: get('scope'), conditions: get('conditions'),
           odds: oddsText ? Number(oddsText) : null
         };
@@ -1538,6 +1583,12 @@ footer{color:#5f718c!important;font-size:10px!important}
 
     function closeModal(id) {
       if ($(id).classList.contains('hidden')) return;
+      if (id === 'couponImportModal' && couponImportController) {
+        couponImportVersion++;
+        couponImportController.abort();
+        couponImportController = null;
+        $('couponExtractButton').disabled = false;
+      }
 
       $(id).classList.add('hidden');
 
@@ -1840,6 +1891,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       }
 
       loadVersion++;
+      resetCouponImportSession();
 
       state.profile = null;
       state.bets = [];
@@ -1996,6 +2048,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
         state.bets = bets;
         state.ready = true;
+        void refreshImportedCoupons();
 
         return true;
       } catch (error) {
@@ -2053,6 +2106,8 @@ footer{color:#5f718c!important;font-size:10px!important}
     // FORMULAIRE PARI
 
     function resetBetForm() {
+      resetImportReview();
+      $('betSubmitBtn').textContent = 'Enregistrer le pari';
       draftComboSignature = null;
 
       $('betForm').reset();
@@ -2173,6 +2228,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
     async function saveBet(event) {
       event.preventDefault();
+      if (importedDraft) { await saveImportedCoupon(); return; }
 
       if (!requireReady()) return;
 
@@ -2740,6 +2796,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       renderMetrics();
       renderBets();
       renderChart();
+      renderImportedCoupons();
     }
 
     // COMBINÉS
@@ -3435,9 +3492,293 @@ footer{color:#5f718c!important;font-size:10px!important}
       }
     }
 
+
+    // Import : extraction puis validation, stockage distinct sans mélange de devises.
+    let couponImportController = null;
+    let couponImportVersion = 0;
+    let couponPreviewUrls = [];
+    let importedDraft = null;
+    let importedEditingId = null;
+    let importedCoupons = [];
+    let importedLoadVersion = 0;
+    let importedLoadError = '';
+
+    function importMessage(message, error = false) {
+      $('couponImportMessage').textContent = message;
+      $('couponImportMessage').className = 'import-message' + (error ? ' error' : '');
+    }
+    function resetImportReview() {
+      importedDraft = null; importedEditingId = null;
+      $('toggleSelectionMode').disabled = false;
+      $('importReviewPanel').classList.add('hidden');
+      $('importReviewPanel').querySelectorAll('input').forEach(i => {
+        i.required = false; i.disabled = true;
+        if (i.type === 'checkbox') i.checked = false; else i.value = '';
+      });
+      document.querySelector('label[for="betStake"]').textContent = 'Mise ($)';
+    }
+    function resetCouponImportSession() {
+      couponImportVersion++; importedLoadVersion++;
+      couponImportController?.abort(); couponImportController = null;
+      importedCoupons = []; importedLoadError = '';
+      couponPreviewUrls.forEach(URL.revokeObjectURL); couponPreviewUrls = [];
+      $('couponImportForm').reset(); $('couponImagePreviews').replaceChildren();
+      $('couponExtractButton').disabled = false;
+      closeModal('couponImportModal'); resetImportReview(); renderImportedCoupons();
+    }
+    function openCouponImporter() {
+      if (!requireReady()) return;
+      $('couponImportMessage').classList.add('hidden');
+      openModal('couponImportModal', 'couponImportImages');
+    }
+    function previewCouponImages() {
+      couponPreviewUrls.forEach(URL.revokeObjectURL); couponPreviewUrls = [];
+      $('couponImagePreviews').replaceChildren();
+      const files = Array.from($('couponImportImages').files || []);
+      if (files.length > 3) { importMessage('Choisissez au maximum 3 captures du même coupon.', true); return; }
+      files.forEach(file => {
+        if (!['image/jpeg','image/png','image/webp'].includes(file.type)) return;
+        const url = URL.createObjectURL(file); couponPreviewUrls.push(url);
+        const img = node('img'); img.src = url; img.alt = file.name;
+        $('couponImagePreviews').append(img);
+      });
+    }
+    async function compressCouponImage(file) {
+      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('Formats acceptés : JPEG, PNG et WebP.');
+      if (file.size > 12000000) throw new Error('Une capture dépasse 12 Mo. Réduisez-la avant l’import.');
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image(); image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error('Une capture est illisible.')); image.src = url;
+        });
+        if (!img.naturalWidth || !img.naturalHeight || img.naturalWidth * img.naturalHeight > 40000000) throw new Error('Dimensions de capture trop grandes.');
+        let edge = 2400, quality = 0.9;
+        for (let attempt = 0; attempt < 7; attempt++) {
+          const scale = Math.min(1, edge / Math.max(img.naturalWidth, img.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Compression des captures indisponible.');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0,canvas.width,canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          const data = dataUrl.split(',')[1];
+          if (data && data.length <= 900000) return { mimeType: 'image/jpeg', data };
+          edge = Math.round(edge * 0.84); quality = Math.max(0.62, quality - 0.04);
+        }
+        throw new Error('Capture trop lourde après compression. Recadrez-la ou séparez-la.');
+      } finally { URL.revokeObjectURL(url); }
+    }
+    async function extractCoupon(event) {
+      event.preventDefault();
+      if (!requireReady() || couponImportController) return;
+      const uid = state.user.id, version = ++couponImportVersion;
+      const files = Array.from($('couponImportImages').files || []);
+      const text = $('couponImportText').value.trim();
+      if (files.length > 3) { importMessage('Maximum 3 captures.',true); return; }
+      if (!files.length && !text.replace(/https?:\/\/\S+/g,'').trim()) { importMessage('Ajoutez une capture ou le texte détaillé. Le lien seul ne suffit pas.',true); return; }
+      if (!$('couponImportConsent').checked) { importMessage('Confirmez l’envoi à Gemini.',true); return; }
+      const controller = new AbortController(); couponImportController = controller;
+      const timer = setTimeout(() => controller.abort(), 70000);
+      $('couponExtractButton').disabled = true;
+      importMessage('Préparation des captures, puis extraction…');
+      try {
+        const images = [];
+        for (const file of files) images.push(await compressCouponImage(file));
+        if (version !== couponImportVersion || controller.signal.aborted || state.user?.id !== uid) return;
+        const { data, error } = await db.auth.getSession();
+        if (error) throw error;
+        if (!data.session?.access_token || data.session.user.id !== uid) throw new Error('Session expirée ou compte modifié. Reconnectez-vous.');
+        const response = await fetch('/api/import-coupon', {
+          method: 'POST', cache:'no-store',
+          headers: { 'Content-Type':'application/json', Accept:'application/json', Authorization:'Bearer '+data.session.access_token },
+          body: JSON.stringify({ text, images, sourceUrl: $('couponImportUrl').value.trim() || null }),
+          signal: controller.signal
+        });
+        let result;
+        try { result = await response.json(); } catch { throw new Error('Réponse serveur illisible. Vérifiez le déploiement de api/import-coupon.js.'); }
+        if (!response.ok) throw new Error(result.error || 'Extraction impossible.');
+        if (version !== couponImportVersion || state.user?.id !== uid) return;
+        if (!result.draft || !Array.isArray(result.draft.selections) || !result.draft.selections.length || result.draft.selections.length > 40) throw new Error('Aucune sélection exploitable extraite. Essayez des captures plus lisibles ou le texte détaillé.');
+        closeModal('couponImportModal');
+        prepareImportedReview(result.draft, result.sourceUrl || null);
+        $('couponImportText').value = ''; $('couponImportImages').value = '';
+        previewCouponImages(); $('couponImportConsent').checked = false;
+      } catch (error) {
+        if (version === couponImportVersion && state.user?.id === uid) importMessage(error.name === 'AbortError' ? 'Délai dépassé. Aucun coupon enregistré.' : error.message,true);
+      } finally {
+        clearTimeout(timer);
+        if (couponImportController === controller) { couponImportController = null; $('couponExtractButton').disabled = false; }
+      }
+    }
+    function prepareImportedReview(draft, sourceUrl, existing = null) {
+      resetBetForm();
+      importedDraft = draft; importedEditingId = existing?.id || null;
+      $('toggleSelectionMode').disabled = true;
+      $('importReviewPanel').classList.remove('hidden');
+      $('importReviewPanel').querySelectorAll('input').forEach(i => { i.disabled = false; });
+      ['importCurrency','importPlacementConfirmed','importReviewConfirmed'].forEach(id => { $(id).required = true; });
+      $('importBookmaker').value = existing?.bookmaker || draft.bookmaker || '';
+      $('importReference').value = existing?.reference || draft.reference || '';
+      $('importCurrency').value = existing?.currency || draft.currency || '';
+      $('importPotentialReturn').value = existing?.potential_return ?? draft.potentialReturn ?? '';
+      $('importSourceUrl').value = sourceUrl || '';
+      $('importPlacementConfirmed').checked = false; $('importReviewConfirmed').checked = false;
+      $('betDate').value = existing?.date || (validDate(draft.placedAt) ? draft.placedAt : '');
+      $('betStatus').value = existing?.status || '';
+      $('betStake').value = existing?.stake ?? draft.stake ?? '';
+      $('betOdds').value = existing?.total_odds ?? draft.totalOdds ?? '';
+      $('betSport').value = existing?.sport || (draft.selections.length > 1 ? 'Combiné' : '');
+      $('betNotes').value = existing?.notes || '';
+      $('selectionRows').replaceChildren(); setSelectionMode(true);
+      draft.selections.forEach(s => addSelectionEditor({
+        event: s.event || '', competition: s.competition || '', market: s.market || '',
+        scope: s.scope || '', odds: s.odds ?? null,
+        conditions: Array.isArray(s.conditions) ? s.conditions.join('\n') : s.conditions || '',
+        eventDate: s.eventDate || '', eventTime: s.eventTime || ''
+      }));
+      $('importWarnings').replaceChildren();
+      const warnings = Array.isArray(draft.uncertainties) ? draft.uncertainties : [];
+      warnings.filter(w=>typeof w==='string').forEach(w=>$('importWarnings').append(node('li','',w)));
+      $('importExtractedFacts').replaceChildren();
+      const facts = [
+        draft.displayedTimestamp ? `Horodatage affiché, non assimilé à une date de validation : ${draft.displayedTimestamp}` : '',
+        draft.displayedStatus ? `Statut lu, à vérifier : ${draft.displayedStatus}` : '',
+        draft.bonusLabel ? `Bonus affiché : ${draft.bonusLabel}` : '',
+        draft.totalOddsBeforeBoost != null ? `Cote avant boost : ${draft.totalOddsBeforeBoost}` : ''
+      ].filter(Boolean);
+      facts.forEach(f=>$('importExtractedFacts').append(node('p','',f)));
+      $('betModalTitle').textContent = existing ? 'Modifier le coupon importé' : 'Vérifier le coupon importé';
+      $('betSubmitBtn').textContent = existing ? 'Enregistrer les modifications' : 'Confirmer l’import dans le journal';
+      $('aiBetNotice').textContent = 'Aucun résultat final n’est déduit d’un score en cours. Choisissez vous-même la date de validation et le statut.';
+      $('aiBetNotice').classList.remove('hidden');
+      updateImportedCurrencyLabel();
+      openModal('betModal','importBookmaker');
+    }
+    function updateImportedCurrencyLabel() {
+      if (!importedDraft) return;
+      const currency = $('importCurrency').value.trim().toUpperCase();
+      document.querySelector('label[for="betStake"]').textContent = /^[A-Z]{3}$/.test(currency) ? `Mise (${currency})` : 'Mise — devise à confirmer';
+    }
+    function importedMoney(amount, currency) {
+      if (amount === null || amount === undefined || amount === '') return '—';
+      const n = Number(amount);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(navigator.language || 'fr-FR', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' ' + currency;
+    }
+    function cleanedSourceUrl(value) {
+      if (!value) return null;
+      const url = new URL(value);
+      if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Le lien doit être une URL HTTPS sans identifiants.');
+      return url.href;
+    }
+    async function importFingerprint(payload) {
+      const normalize = s => String(s || '').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
+      const identity = payload.reference && payload.bookmaker
+        ? { bookmaker:normalize(payload.bookmaker), reference:normalize(payload.reference) }
+        : { date:payload.date, currency:payload.currency, stake:payload.stake, odds:payload.total_odds,
+            selections: payload.selections.map(s=>({event:normalize(s.event),market:normalize(s.market),scope:normalize(s.scope),conditions:normalize(s.conditions)})) };
+      const digest = await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(identity)));
+      return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+    }
+    async function saveImportedCoupon() {
+      if (!requireReady() || !importedDraft) return;
+      if (!$('importPlacementConfirmed').checked || !$('importReviewConfirmed').checked) { showAlert('Confirmez que le pari est validé et que les informations sont vérifiées.','ERROR'); return; }
+      if (!selectionMode) { showAlert('Utilisez les fiches détaillées pour enregistrer un coupon importé.','ERROR'); return; }
+      if (!prepareDetailedSelection()) return;
+      const currency=$('importCurrency').value.trim().toUpperCase();
+      const stake=Number($('betStake').value), odds=Number($('betOdds').value);
+      const potentialText=$('importPotentialReturn').value;
+      const potential=potentialText===''?null:Number(potentialText);
+      if (!/^[A-Z]{3}$/.test(currency) || !validDate($('betDate').value) || !statuses.includes($('betStatus').value) ||
+          !sports.includes($('betSport').value) || !Number.isFinite(stake) || stake<=0 || !Number.isFinite(odds) || odds<1 ||
+          potential!==null && (!Number.isFinite(potential)||potential<0)) { showAlert('Vérifiez la devise, la date, le statut, le type de pari et les montants.','ERROR'); return; }
+      let sourceUrl;
+      try { sourceUrl=cleanedSourceUrl($('importSourceUrl').value.trim()); } catch(e){showAlert(e.message,'ERROR');return;}
+      const uid=state.user.id, editingId=importedEditingId;
+      const payload={
+        user_id:uid, date:$('betDate').value, sport:$('betSport').value,
+        bookmaker:$('importBookmaker').value.trim()||null, reference:$('importReference').value.trim()||null,
+        source_url:sourceUrl, currency,stake,total_odds:odds,potential_return:potential,
+        status:$('betStatus').value,selections:collectSelections(),notes:$('betNotes').value.trim(),
+        coupon_data:{...importedDraft, placementConfirmedByUser:true, reviewedAt:new Date().toISOString()}
+      };
+      // L'extraction d'origine est conservée à titre de provenance, pas comme état validé.
+      mutationBusy=true; $('betSubmitBtn').disabled=true; renderAuth();
+      try {
+        payload.fingerprint=await importFingerprint(payload);
+        if(state.user?.id!==uid)throw new Error('Le compte a changé.');
+        const query=editingId
+          ? db.from('imported_coupons').update(payload).eq('id',editingId).eq('user_id',uid)
+          : db.from('imported_coupons').insert(payload);
+        const {error}=await query.select('id').single();
+        if(error){if(error.code==='23505')throw new Error('Ce coupon semble déjà présent dans votre journal. Aucun doublon ajouté.');throw error;}
+        if(state.user?.id===uid){closeModal('betModal');resetImportReview();await refreshImportedCoupons();showAlert('Coupon enregistré dans la section « Coupons importés », sans modifier le capital.','SUCCESS');}
+      } catch(e){showAlert('Import non enregistré : '+e.message,'ERROR');}
+      finally {mutationBusy=false;$('betSubmitBtn').disabled=false;renderAuth();}
+    }
+    async function refreshImportedCoupons() {
+      const uid=state.user?.id;if(!uid||!db)return;
+      const version=++importedLoadVersion;importedLoadError='';
+      $('reloadImportedCoupons').disabled=true;
+      try {
+        const rows=[];
+        for(let offset=0;;offset+=250){
+          const {data,error}=await db.from('imported_coupons')
+            .select('id,user_id,date,sport,bookmaker,reference,source_url,currency,stake,total_odds,potential_return,status,selections,coupon_data,notes')
+            .eq('user_id',uid).order('date',{ascending:false}).order('id',{ascending:false}).range(offset,offset+249);
+          if(error)throw error;rows.push(...data);if(data.length<250)break;
+        }
+        if(version===importedLoadVersion&&state.user?.id===uid)importedCoupons=rows;
+      } catch(e){if(version===importedLoadVersion&&state.user?.id===uid){importedCoupons=[];importedLoadError='Coupons importés indisponibles. Vérifiez que le script SQL d’installation a été exécuté. '+e.message;}}
+      finally {if(version===importedLoadVersion){$('reloadImportedCoupons').disabled=false;renderImportedCoupons();}}
+    }
+    function renderImportedCoupons() {
+      const list=$('importedCouponsList');list.replaceChildren();
+      if(!state.user){list.append(node('p','imported-empty','Connectez-vous pour retrouver vos coupons importés.'));return;}
+      if(importedLoadError){list.append(node('p','imported-empty',importedLoadError));return;}
+      if(!importedCoupons.length){list.append(node('p','imported-empty','Aucun coupon importé enregistré.'));return;}
+      const statusesLabel={PENDING:'En cours',WON:'Gagné',LOST:'Perdu'};
+      importedCoupons.forEach(c=>{
+        const card=node('article','imported-card'),top=node('div','imported-meta');
+        top.append(node('h3','',c.bookmaker||'Coupon importé'),node('span','badge '+({PENDING:'pending',WON:'won',LOST:'lost'}[c.status]||''),statusesLabel[c.status]||c.status));
+        card.append(top,node('p','',`${c.date} · ${c.selections.length} sélection(s) · ${c.currency}`),
+          node('p','',`Mise : ${importedMoney(c.stake,c.currency)} · Cote totale : ${Number(c.total_odds)}`),
+          node('p','',`Retour potentiel affiché : ${importedMoney(c.potential_return,c.currency)}`));
+        const details=node('details');details.append(node('summary','selection-hint','Voir les sélections et les notes'));
+        details.append(node('pre','',c.selections.map((s,i)=>[`${i+1}. ${s.event}`,s.competition,s.eventDate,s.eventTime,s.market,s.scope,s.conditions,s.odds==null?'':`Cote : ${s.odds}`].filter(Boolean).join('\n')).join('\n\n')));
+        if(c.notes)details.append(node('pre','',c.notes));
+        if(c.reference)details.append(node('p','',`Référence : ${c.reference}`));
+        if(c.source_url){try{const a=node('a','selection-hint','Lien de référence — contenu non vérifié');a.href=cleanedSourceUrl(c.source_url);a.target='_blank';a.rel='noopener noreferrer';details.append(a);}catch{}}
+        card.append(details);
+        const actions=node('div','imported-meta');actions.style.marginTop='14px';
+        const edit=node('button','btn secondary','Modifier'),remove=node('button','btn danger','Supprimer');edit.type=remove.type='button';
+        edit.addEventListener('click',()=>{if(!requireReady())return;prepareImportedReview({...c.coupon_data,selections:c.selections},c.source_url,c);});
+        remove.addEventListener('click',()=>deleteImportedCoupon(c.id));
+        actions.append(edit,remove);card.append(actions);list.append(card);
+      });
+    }
+    async function deleteImportedCoupon(id) {
+      if(!requireReady()||!confirm('Supprimer ce coupon importé du journal ?'))return;
+      const uid=state.user.id;mutationBusy=true;renderAuth();
+      try{const {data,error}=await db.from('imported_coupons').delete().eq('id',id).eq('user_id',uid).select('id');
+        if(error)throw error;if(!data?.length)throw new Error('Coupon introuvable ou accès refusé.');
+        if(state.user?.id===uid){await refreshImportedCoupons();showAlert('Coupon importé supprimé.','SUCCESS');}
+      }catch(e){showAlert(e.message,'ERROR');}finally{mutationBusy=false;renderAuth();}
+    }
+
     // ÉVÉNEMENTS ET ACCESSIBILITÉ
 
     function setup() {
+      resetImportReview();
+      $('openCouponImport').addEventListener('click',openCouponImporter);
+      $('couponImportForm').addEventListener('submit',extractCoupon);
+      $('couponImportImages').addEventListener('change',previewCouponImages);
+      $('importCurrency').addEventListener('input',updateImportedCurrencyLabel);
+      $('reloadImportedCoupons').addEventListener('click',refreshImportedCoupons);
+
       $('addSelectionRow').addEventListener('click', () => addSelectionEditor());
       $('toggleSelectionMode').addEventListener('click', () => {
         if (selectionMode) {
