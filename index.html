@@ -409,6 +409,9 @@ footer{color:#5f718c!important;font-size:10px!important}
 .import-dialog{max-width:700px}.import-review{padding:15px;border:1px solid #791CF8;border-radius:13px;background:#6600ff12}.import-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.import-check{display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.7;color:#dfcfea}.import-check input{margin-top:5px;width:17px;height:17px;flex-shrink:0;accent-color:#791CF8}.import-message{padding:12px;border:1px solid #65417F;border-radius:10px;font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}.import-message.error{background:#3A020D;border-color:#C72C48;color:#ffd1da}.import-previews{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.import-previews img{width:85px;height:105px;object-fit:contain;border:1px solid #65417F;border-radius:8px;background:#180922}.import-warnings{color:#ffb8a4;font-size:11px;line-height:1.8;list-style:disc;padding-left:20px}.imported-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.imported-card{border:1px solid #65417F;background:#1B0B2C;padding:17px;border-radius:14px;min-width:0;overflow-wrap:anywhere}.imported-card h3{font-size:14px;font-weight:700}.imported-card p{font-size:12px;line-height:1.8;margin-top:8px;color:#dac9e8}.imported-card pre{font-family:inherit;white-space:pre-wrap;font-size:11px;line-height:1.8;color:#bba4ca;margin-top:12px}.imported-card .btn{font-size:11px;min-height:38px}.imported-empty{font-size:12px;line-height:1.8;color:#bba4ca;grid-column:1/-1}.imported-meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 @media(max-width:600px){.import-two,.imported-list{grid-template-columns:1fr}.import-review{padding:12px}.import-dialog{padding:17px!important}}
 </style>
+<style>
+.settlement-panel{padding:16px;background:#6600ff13;border:1px solid #65417F;border-radius:13px}.settlement-panel h3{font-size:14px;font-weight:700}.selection-result{border-top:1px solid #65417F;padding-top:13px;margin-top:5px}.selection-result select{border-color:#791CF8!important}.selection-fields .selection-result{grid-column:1/-1}.result-warning{color:#ffb8a4!important}.settlement-panel .field:disabled{opacity:.45}.settlement-pill{font-size:11px;color:#d9baff;line-height:1.8}.settlement-panel .import-check{margin-top:12px}
+</style>
 </head>
 
 <body class="min-h-screen flex flex-col">
@@ -701,7 +704,7 @@ footer{color:#5f718c!important;font-size:10px!important}
     </p>
 
     <p class="text-[11px] text-slate-500 mt-3">
-      Paris manuels et coupons EUR réglés, classés selon la date de pari renseignée. Ce n’est pas un historique des dates de règlement.
+      Paris et coupons EUR réglés, classés par date de règlement lorsqu’elle est renseignée ; les anciens paris utilisent leur date de pari en repli.
     </p>
   </div>
 
@@ -788,6 +791,8 @@ footer{color:#5f718c!important;font-size:10px!important}
             Connectez-vous, puis lancez une recherche.
           </p>
         </div>
+
+        <p id="aiHistoryContext" class="hidden selection-hint" role="status"></p>
 
         <p
           id="aiLastUpdate"
@@ -1145,11 +1150,25 @@ footer{color:#5f718c!important;font-size:10px!important}
               <option value="PENDING">En cours</option>
               <option value="WON">Gagné</option>
               <option value="LOST">Perdu</option>
+              <option value="REFUNDED">Remboursé en argent</option>
+              <option value="CASHED_OUT">Cashout / règlement particulier</option>
             </select>
           </div>
         </div>
 
-        <div>
+        
+<div id="settlementPanel" class="settlement-panel space-y-3">
+ <h3>Règlement du coupon</h3>
+ <p id="selectionSettlementHint" class="selection-hint" aria-live="polite"></p>
+ <div class="import-two">
+  <div><label class="label" for="settledReturn">Montant réellement crédité — mise comprise</label><input id="settledReturn" class="field" type="number" min="0" step="0.01"><p class="selection-hint">Argent effectivement rendu par le bookmaker, pas un freebet ni le gain potentiel. Saisir 0 si aucun argent n’a été crédité.</p></div>
+  <div><label class="label" for="settledAt">Date du règlement</label><input id="settledAt" class="field" type="date"></div>
+ </div>
+ <label id="settlementConfirmLabel" class="import-check"><input id="settlementConfirmed" type="checkbox"><span>Je confirme le statut global, le montant réellement crédité et la date du règlement auprès du bookmaker.</span></label>
+ <p class="selection-hint">Les résultats individuels ne changent jamais automatiquement le capital. Le règlement global confirmé fait foi, notamment après une annulation, un boost ou un cashout.</p>
+</div>
+
+<div>
           <label class="label" for="betNotes">
             Notes / détails du combiné
           </label>
@@ -1276,7 +1295,9 @@ footer{color:#5f718c!important;font-size:10px!important}
     const statuses = [
       'PENDING',
       'WON',
-      'LOST'
+      'LOST',
+      'REFUNDED',
+      'CASHED_OUT'
     ];
 
     const state = {
@@ -1300,6 +1321,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
     let comboSelections = [];
     let draftComboSignature = null;
+    let draftAnalysisContext = {};
 
 
     let selectionMode = false;
@@ -1325,7 +1347,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       if (!decoded) return notes;
       const details = decoded.rows.map((s, i) => [
         `${i + 1}. ${s.event}`, s.competition, s.eventDate, s.eventTime, s.market, s.scope,
-        s.conditions, s.odds === null ? '' : `Cote : ${s.odds}`
+        s.conditions, s.odds === null ? '' : `Cote : ${s.odds}`,
+        `Résultat : ${LEG_LABELS[s.result]||'Non renseigné'}`,s.failureReason?`Constat : ${s.failureReason}`:''
       ].filter(Boolean).join('\n')).join('\n\n');
       return [details, decoded.notes].filter(Boolean).join('\n\n');
     }
@@ -1366,6 +1389,7 @@ footer{color:#5f718c!important;font-size:10px!important}
     function addSelectionEditor(data = {}) {
       if ($('selectionRows').children.length >= 40) { showAlert('Maximum 40 sélections.', 'ERROR'); return; }
       const row = node('div', 'selection-card');
+      row.dataset.origin = data.origin || '';
       const head = node('div', 'selection-heading');
       const number = node('h3', 'selection-number');
       const remove = node('button', 'btn danger', 'Retirer');
@@ -1384,7 +1408,8 @@ footer{color:#5f718c!important;font-size:10px!important}
         selectionInput('Marché et choix exact', 'market', data.market, true, true),
         selectionInput('Période / périmètre — si indiqué', 'scope', data.scope),
         selectionInput('Cote individuelle — facultatif', 'odds', data.odds),
-        selectionInput('Autres conditions du même pari — facultatif', 'conditions', data.conditions, false, true)
+        selectionInput('Autres conditions du même pari — facultatif', 'conditions', data.conditions, false, true),
+        selectionResultEditor(data)
       );
       row.append(head, fields);
       $('selectionRows').append(row);
@@ -1402,14 +1427,16 @@ footer{color:#5f718c!important;font-size:10px!important}
         return {
           event: get('event'), competition: get('competition'), eventDate: get('eventDate'), eventTime: get('eventTime'), market: get('market'),
           scope: get('scope'), conditions: get('conditions'),
-          odds: oddsText ? Number(oddsText) : null
+          odds: oddsText ? Number(oddsText) : null,
+          result: get('result') || 'PENDING', failureReason: get('failureReason'), origin: row.dataset.origin || ''
         };
       });
     }
 
     function updateSelectionPreview() {
-      if (!selectionMode) { $('selectionPreview').textContent = ''; return; }
+      if (!selectionMode) { $('selectionPreview').textContent = ''; updateSettlementHint(); return; }
       const rows = collectSelections();
+      updateSettlementHint();
       $('selectionPreview').textContent = rows.length > 1
         ? `Combiné · ${rows.length} sélections · la cote totale reste à vérifier sur le coupon.`
         : 'Pari simple · 1 sélection';
@@ -1440,6 +1467,62 @@ footer{color:#5f718c!important;font-size:10px!important}
       return SELECTION_MARKER + JSON.stringify(collectSelections()) + '\n\n' + $('betNotes').value.trim();
     }
 
+
+
+    const LEG_RESULTS = ['PENDING','WON','LOST','VOID'];
+    const LEG_LABELS = {PENDING:'En attente',WON:'Gagnée',LOST:'Perdue',VOID:'Annulée / remboursée'};
+    function selectionResultEditor(data) {
+      const wrapper=node('div','selection-result');
+      const label=node('label','label','Résultat de cette sélection');
+      const select=node('select','field');select.dataset.key='result';
+      select.id='result_'+betId();label.htmlFor=select.id;
+      LEG_RESULTS.forEach(value=>{const option=node('option','',LEG_LABELS[value]);option.value=value;select.append(option);});
+      select.value=LEG_RESULTS.includes(data.result)?data.result:'PENDING';
+      select.addEventListener('change',updateSelectionPreview);
+      wrapper.append(label,select,
+        selectionInput('Constat / cause d’échec observée — facultatif, pas une supposition', 'failureReason', data.failureReason, false, true));
+      return wrapper;
+    }
+    function selectionOutcomeSummary(rows) {
+      if (!rows.length) return 'Aucune sélection détaillée.';
+      const results=rows.map(s=>LEG_RESULTS.includes(s.result)?s.result:'PENDING');
+      const count=key=>results.filter(x=>x===key).length;
+      const summary=`${count('WON')} gagnée(s) · ${count('LOST')} perdue(s) · ${count('VOID')} annulée(s) · ${count('PENDING')} en attente.`;
+      const proposed=results.includes('LOST')?'Perdu':results.every(x=>x==='VOID')?'Remboursé':results.every(x=>x==='WON'||x==='VOID')?'Gagné':'En cours';
+      return summary+` Statut indicatif pour un combiné classique : ${proposed}. Confirmez le règlement du bookmaker.`;
+    }
+    function syncSettlementFields() {
+      const pending=$('betStatus').value==='PENDING'||!$('betStatus').value;
+      ['settledReturn','settledAt'].forEach(id=>{$(id).disabled=pending;$(id).required=!pending;});
+      $('settlementConfirmed').disabled=pending;$('settlementConfirmed').required=!pending;
+      $('settlementConfirmLabel').classList.toggle('hidden',pending);
+      updateSettlementHint();
+    }
+    function updateSettlementHint() {
+      $('selectionSettlementHint').textContent=selectionMode
+        ?selectionOutcomeSummary(collectSelections())
+        :'Ancien pari en saisie libre : aucun résultat individuel ne sera déduit du statut global. Vous pouvez passer à la saisie détaillée pour les renseigner.';
+    }
+    function loadSettlementFields(record={}) {
+      $('settledReturn').value=record.settled_return??'';
+      $('settledAt').value=record.settled_at||'';
+      $('settlementConfirmed').checked=false;
+      syncSettlementFields();
+    }
+    function readSettlementFields() {
+      if($('betStatus').value==='PENDING')return {settled_return:null,settled_at:null};
+      const raw=$('settledReturn').value;
+      const amount=Number(raw),stake=Number($('betStake').value),status=$('betStatus').value;
+      if(raw===''||!Number.isFinite(amount)||amount<0||!validDate($('settledAt').value)||!$('settlementConfirmed').checked){
+        showAlert('Renseignez le montant réellement crédité et la date, puis confirmez le règlement.','ERROR');return null;
+      }
+      if($('settledAt').value>parisDate()||validDate($('betDate').value)&&$('settledAt').value<$('betDate').value){
+        showAlert('La date de règlement doit être comprise entre la date du pari et aujourd’hui.','ERROR');return null;
+      }
+      if(status==='REFUNDED'&&Math.abs(amount-stake)>0.005){showAlert('Un remboursement intégral doit rendre la mise. Pour un retour partiel, choisissez « Cashout / règlement particulier ».','ERROR');return null;}
+      if(status==='LOST'&&amount!==0){showAlert('Pour un pari perdu sans retour, renseignez 0. Un règlement avec argent crédité doit être confirmé comme règlement particulier.','ERROR');return null;}
+      return {settled_return:amount,settled_at:$('settledAt').value};
+    }
 
     // OUTILS
 
@@ -1512,11 +1595,13 @@ footer{color:#5f718c!important;font-size:10px!important}
     }
 
     function profit(bet) {
-      if (bet.status === 'WON') {
-        const gross = bet.returnAmount == null ? bet.stake * bet.odds : bet.returnAmount;
-        return centsRound(gross - bet.stake);
-      }
-      return bet.status === 'LOST' ? -bet.stake : 0;
+      if (bet.status === 'PENDING') return 0;
+      if (bet.returnAmount != null) return centsRound(Number(bet.returnAmount) - bet.stake);
+      // Compatibilité des anciens enregistrements : pas de faux montant de règlement écrit en base.
+      if (bet.status === 'REFUNDED') return 0;
+      if (bet.status === 'LOST') return -bet.stake;
+      if (bet.status === 'WON') return centsRound((bet.potentialReturn == null ? bet.stake * bet.odds : bet.potentialReturn) - bet.stake);
+      throw new Error('Montant réellement crédité requis pour un règlement particulier.');
     }
 
     function showAlert(message, type = 'INFO') {
@@ -1874,6 +1959,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       );
 
       $('aiLastUpdate').classList.add('hidden');
+      $('aiHistoryContext').classList.add('hidden');
       $('searchSources').classList.add('hidden');
       $('sourceList').replaceChildren();
     }
@@ -1930,7 +2016,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         const { data, error } = await db
           .from('bets')
           .select(
-            'id,date,sport,match,stake,odds,status,notes,user_id'
+            'id,date,sport,match,stake,odds,status,notes,user_id,settled_return,settled_at,analysis_context'
           )
           .eq('user_id', userId)
           .order('date', { ascending: false })
@@ -2111,6 +2197,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       resetImportReview();
       $('betSubmitBtn').textContent = 'Enregistrer le pari';
       draftComboSignature = null;
+      draftAnalysisContext = {};
 
       $('betForm').reset();
       $('selectionRows').replaceChildren();
@@ -2119,6 +2206,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('betId').value = '';
       $('betDate').value = parisDate();
       $('betStatus').value = 'PENDING';
+      loadSettlementFields();
 
       $('betModalTitle').textContent =
         'Enregistrer un pari';
@@ -2138,7 +2226,11 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       resetBetForm();
 
-      setSelectionMode(false);
+      setSelectionMode(true);
+      $('selectionRows').replaceChildren();
+      addSelectionEditor({event:txt(item.match),competition:txt(item.league),market:txt(item.selection),
+        eventDate:txt(item.date),eventTime:txt(item.time),odds:typeof item.odds==='number'?item.odds:null,origin:'AI'});
+      draftAnalysisContext={origin:'AI',savedAt:new Date().toISOString(),predictions:[item]};
       $('betModalTitle').textContent =
         'Ajouter une proposition IA';
 
@@ -2214,6 +2306,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('betOdds').value = bet.odds;
       $('betDate').value = bet.date;
       $('betStatus').value = bet.status;
+      draftAnalysisContext = bet.analysis_context || {};
+      loadSettlementFields(bet);
       const detailed = decodeSelections(bet.notes);
       $('betNotes').value = detailed ? detailed.notes : (bet.notes || '');
       if (detailed) {
@@ -2238,6 +2332,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       const existingId = $('betId').value;
       const signature = draftComboSignature;
       if (!prepareDetailedSelection()) return;
+      const settlement = readSettlementFields();
+      if (!settlement) return;
       const storedNotes = notesForStorage();
       if (storedNotes.length > $('betNotes').maxLength) {
         showAlert('Les détails du pari sont trop longs pour être enregistrés.', 'ERROR');
@@ -2251,7 +2347,9 @@ footer{color:#5f718c!important;font-size:10px!important}
         stake: Number($('betStake').value),
         odds: Number($('betOdds').value),
         status: $('betStatus').value,
-        notes: storedNotes
+        notes: storedNotes,
+        ...settlement,
+        analysis_context: draftAnalysisContext
       };
 
       if (
@@ -2483,7 +2581,9 @@ footer{color:#5f718c!important;font-size:10px!important}
           id: `import:${c.id}`, source: 'import', date:c.date,
           stake: c.stake == null ? NaN : Number(c.stake),
           odds: c.total_odds == null ? NaN : Number(c.total_odds), status:c.status,
-          returnAmount: c.potential_return == null ? null : Number(c.potential_return)
+          returnAmount:c.settled_return==null?null:Number(c.settled_return),
+          potentialReturn:c.potential_return==null?null:Number(c.potential_return),
+          settled_at:c.settled_at||null
         };
         validate(b, `coupon ${c.id}`);
         if (b.returnAmount !== null && (!Number.isFinite(b.returnAmount) || b.returnAmount < 0)) {
@@ -2498,34 +2598,40 @@ footer{color:#5f718c!important;font-size:10px!important}
       }
       for (const m of manualBets) {
         if (replacedManualIds.has(String(m.id))) continue;
-        const b={...m,id:`manual:${m.id}`,source:'manual',stake:Number(m.stake),odds:Number(m.odds),returnAmount:null};
+        const b={...m,id:`manual:${m.id}`,source:'manual',stake:Number(m.stake),odds:Number(m.odds),returnAmount:m.settled_return==null?null:Number(m.settled_return),potentialReturn:null,settled_at:m.settled_at||null};
+        if (b.returnAmount!==null&&(!Number.isFinite(b.returnAmount)||b.returnAmount<0)) throw new Error('Retour réel invalide dans un pari manuel.');
         if (m.stake == null || m.odds == null) throw new Error('Montants absents dans un pari manuel.');
         validate(b, `pari ${m.id}`); rows.push(b);
       }
-      return { rows, foreignCount, linkedCount, manualCount:rows.filter(b=>b.source==='manual').length,
+      return { rows, foreignCount, linkedCount, unconfirmedCount:rows.filter(b=>b.status!=='PENDING'&&b.returnAmount==null).length, manualCount:rows.filter(b=>b.source==='manual').length,
         importedCount:rows.filter(b=>b.source==='import').length };
     }
+
     function accountingSnapshot() {
       if (!state.ready || !state.profile) return {ready:false,message:state.loading?'Chargement des paris…':'Connectez-vous et chargez vos données.'};
       if (importedAccountingLoading || !importedAccountingLoaded) return {ready:false,message:'Chargement des coupons importés : indicateurs en attente.'};
       if (importedLoadError) return {ready:false,message:'Indicateurs indisponibles : les coupons importés n’ont pas pu être chargés. Actualisez la section des coupons.'};
-      try { return {ready:true,...accountingRows(state.bets,importedCoupons)}; }
+      try { const data=accountingRows(state.bets,importedCoupons);data.rows.forEach(profit);return {ready:true,...data}; }
       catch(e) { return {ready:false,message:e.message}; }
     }
     function financialTotals(rows,initialCapital) {
-      let totalProfit=0,pending=0,settledStakes=0,settled=0,won=0;
-      for (const b of rows) {
-        totalProfit += profit(b);
-        if (b.status==='PENDING') pending+=b.stake;
-        else {settled++;settledStakes+=b.stake;if(b.status==='WON')won++;}
+      let totalProfit=0,pending=0,settledStakes=0,settled=0,won=0,refunded=0,special=0;
+      for(const b of rows){
+        totalProfit+=profit(b);
+        if(b.status==='PENDING')pending+=b.stake;
+        else if(b.status==='REFUNDED')refunded++;
+        else {
+          settledStakes+=b.stake;
+          if(b.status==='CASHED_OUT')special++;
+          else {settled++;if(b.status==='WON')won++;}
+        }
       }
       totalProfit=centsRound(totalProfit);pending=centsRound(pending);
-      return {totalProfit,pending,settledStakes,settled,won,
-        capital:centsRound(initialCapital+totalProfit),
-        available:centsRound(initialCapital+totalProfit-pending),
-        yieldValue:settledStakes?totalProfit/settledStakes*100:0,
-        winRate:settled?won/settled*100:0};
+      return {totalProfit,pending,settledStakes,settled,won,refunded,special,
+        capital:centsRound(initialCapital+totalProfit),available:centsRound(initialCapital+totalProfit-pending),
+        yieldValue:settledStakes?totalProfit/settledStakes*100:0,winRate:settled?won/settled*100:0};
     }
+
     function fillManualDuplicateChoices(selectedId='') {
       const select=$('importLinkedManualBet'); select.replaceChildren();
       const none=node('option','','Aucun — ce coupon est un pari distinct');none.value='';select.append(none);
@@ -2557,7 +2663,9 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('metricWinRate').textContent=totals.winRate.toFixed(1)+'%';
       note.textContent=`EUR · ${snapshot.manualCount} pari(s) manuel(s) + ${snapshot.importedCount} coupon(s) importé(s) comptés.`+
         (snapshot.linkedCount?` ${snapshot.linkedCount} doublon(s) relié(s) : seule la version importée est comptée.`:'')+
-        (snapshot.foreignCount?` ${snapshot.foreignCount} coupon(s) d’autres devises exclus, sans conversion.`:'');
+        (snapshot.foreignCount?` ${snapshot.foreignCount} coupon(s) d’autres devises exclus, sans conversion.`:'')+
+        (snapshot.unconfirmedCount?` Attention : ${snapshot.unconfirmedCount} ancien(s) règlement(s) au montant non confirmé ; calcul historique provisoire.`:'')+
+        ' Remboursements exclus du rendement ; remboursements et cashouts exclus du taux de réussite.';
     }
 
     function cell(label, content, classes = '') {
@@ -2610,7 +2718,9 @@ footer{color:#5f718c!important;font-size:10px!important}
       const labels = {
         PENDING: ['En cours', 'pending'],
         WON: ['Gagné', 'won'],
-        LOST: ['Perdu', 'lost']
+        LOST: ['Perdu', 'lost'],
+        REFUNDED: ['Remboursé', 'pending'],
+        CASHED_OUT: ['Règlement particulier', 'pending']
       };
 
       state.bets.forEach(bet => {
@@ -2638,6 +2748,9 @@ footer{color:#5f718c!important;font-size:10px!important}
           description.append(node('p','selection-hint','Doublon relié : le coupon importé remplace ce pari dans les indicateurs.'));
         }
 
+        if (bet.status !== 'PENDING') description.append(node('p','settlement-pill',bet.settled_return==null
+          ? 'Ancien règlement : montant non confirmé.'
+          : `Crédité : ${money(bet.settled_return)} · ${bet.settled_at||'date non renseignée'}`));
         if (bet.notes) {
           const details = node(
             'details',
@@ -2743,12 +2856,12 @@ footer{color:#5f718c!important;font-size:10px!important}
         .filter(bet => bet.status !== 'PENDING')
         .sort(
           (a, b) =>
-            a.date.localeCompare(b.date) ||
+            (a.settled_at||a.date).localeCompare(b.settled_at||b.date) ||
             a.id.localeCompare(b.id)
         )
         .forEach(bet => {
           capital = centsRound(capital + profit(bet));
-          labels.push(bet.date);
+          labels.push(bet.settled_at || bet.date);
           values.push(capital);
         });
 
@@ -3054,7 +3167,11 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       resetBetForm();
 
-      setSelectionMode(false);
+      setSelectionMode(true);
+      $('selectionRows').replaceChildren();
+      comboSelections.forEach(item=>addSelectionEditor({event:txt(item.match),competition:txt(item.league),
+        market:txt(item.selection),eventDate:txt(item.date),eventTime:txt(item.time),odds:comboOdds(item),origin:'AI'}));
+      draftAnalysisContext={origin:'AI',savedAt:new Date().toISOString(),predictions:comboSelections.map(item=>({...item}))};
       $('betModalTitle').textContent =
         'Enregistrer un combiné';
 
@@ -3339,6 +3456,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         'Recherche en cours…';
 
       $('aiLastUpdate').classList.add('hidden');
+      $('aiHistoryContext').classList.add('hidden');
       $('searchSources').classList.add('hidden');
 
       grid.setAttribute('aria-busy', 'true');
@@ -3468,6 +3586,16 @@ footer{color:#5f718c!important;font-size:10px!important}
         }
 
         renderSources(data);
+        const historyStatus=response.headers.get('X-Pronos-Results-Context');
+        const historyCoupons=response.headers.get('X-Pronos-Results-Count');
+        const historyOutcomes=response.headers.get('X-Pronos-Selection-Outcomes');
+        if(historyStatus){
+          $('aiHistoryContext').textContent=historyStatus==='available'||historyStatus==='partial'
+            ? `Contexte de résultats ${historyStatus==='partial'?'partiel':'chargé'} : ${historyCoupons||'0'} coupon(s), ${historyOutcomes||'0'} résultat(s) individuels transmis à l’analyse. Ce n’est pas un réentraînement du modèle.`
+            : historyStatus==='empty'?'Aucun résultat exploitable dans l’échantillon d’historique.':'Historique des résultats indisponible : aucune mémoire complète revendiquée.';
+          $('aiHistoryContext').classList.remove('hidden');
+        }
+
 
         $('aiLastUpdate').textContent =
           'Réponse reçue le ' +
@@ -3649,6 +3777,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('importPlacementConfirmed').checked = false; $('importReviewConfirmed').checked = false;
       $('betDate').value = existing?.date || (validDate(draft.placedAt) ? draft.placedAt : '');
       $('betStatus').value = existing?.status || '';
+      loadSettlementFields(existing || {});
       $('betStake').value = existing?.stake ?? draft.stake ?? '';
       $('betOdds').value = existing?.total_odds ?? draft.totalOdds ?? '';
       $('betSport').value = existing?.sport || (draft.selections.length > 1 ? 'Combiné' : '');
@@ -3658,7 +3787,8 @@ footer{color:#5f718c!important;font-size:10px!important}
         event: s.event || '', competition: s.competition || '', market: s.market || '',
         scope: s.scope || '', odds: s.odds ?? null,
         conditions: Array.isArray(s.conditions) ? s.conditions.join('\n') : s.conditions || '',
-        eventDate: s.eventDate || '', eventTime: s.eventTime || ''
+        eventDate: s.eventDate || '', eventTime: s.eventTime || '',
+        result:s.result||'PENDING', failureReason:s.failureReason||'', origin:s.origin||'import'
       }));
       $('importWarnings').replaceChildren();
       const warnings = Array.isArray(draft.uncertainties) ? draft.uncertainties : [];
@@ -3677,6 +3807,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('aiBetNotice').classList.remove('hidden');
       fillManualDuplicateChoices(existing?.coupon_data?.metricLinkedBetId || '');
       updateImportedCurrencyLabel();
+      syncSettlementFields();
       openModal('betModal','importBookmaker');
     }
     function updateImportedCurrencyLabel() {
@@ -3718,6 +3849,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       if (!/^[A-Z]{3}$/.test(currency) || !validDate($('betDate').value) || !statuses.includes($('betStatus').value) ||
           !sports.includes($('betSport').value) || !Number.isFinite(stake) || stake<=0 || !Number.isFinite(odds) || odds<1 ||
           potential!==null && (!Number.isFinite(potential)||potential<0)) { showAlert('Vérifiez la devise, la date, le statut, le type de pari et les montants.','ERROR'); return; }
+      const settlement=readSettlementFields();
+      if(!settlement)return;
       let sourceUrl;
       try { sourceUrl=cleanedSourceUrl($('importSourceUrl').value.trim()); } catch(e){showAlert(e.message,'ERROR');return;}
       const linkedManualId=$('importLinkedManualBet').value;
@@ -3731,7 +3864,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         user_id:uid, date:$('betDate').value, sport:$('betSport').value,
         bookmaker:$('importBookmaker').value.trim()||null, reference:$('importReference').value.trim()||null,
         source_url:sourceUrl, currency,stake,total_odds:odds,potential_return:potential,
-        status:$('betStatus').value,selections:collectSelections(),notes:$('betNotes').value.trim(),
+        status:$('betStatus').value,selections:collectSelections(),notes:$('betNotes').value.trim(),...settlement,
         coupon_data:{...importedDraft, metricLinkedBetId:linkedManualId || null, placementConfirmedByUser:true, reviewedAt:new Date().toISOString()}
       };
       // L'extraction d'origine est conservée à titre de provenance, pas comme état validé.
@@ -3758,7 +3891,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         const rows=[];
         for(let offset=0;;offset+=250){
           const {data,error}=await db.from('imported_coupons')
-            .select('id,user_id,date,sport,bookmaker,reference,source_url,currency,stake,total_odds,potential_return,status,selections,coupon_data,notes')
+            .select('id,user_id,date,sport,bookmaker,reference,source_url,currency,stake,total_odds,potential_return,status,selections,coupon_data,notes,settled_return,settled_at')
             .eq('user_id',uid).order('date',{ascending:false}).order('id',{ascending:false}).range(offset,offset+249);
           if(error)throw error;rows.push(...data);if(data.length<250)break;
         }
@@ -3771,10 +3904,10 @@ footer{color:#5f718c!important;font-size:10px!important}
       if(!state.user){list.append(node('p','imported-empty','Connectez-vous pour retrouver vos coupons importés.'));return;}
       if(importedLoadError){list.append(node('p','imported-empty',importedLoadError));return;}
       if(!importedCoupons.length){list.append(node('p','imported-empty','Aucun coupon importé enregistré.'));return;}
-      const statusesLabel={PENDING:'En cours',WON:'Gagné',LOST:'Perdu'};
+      const statusesLabel={PENDING:'En cours',WON:'Gagné',LOST:'Perdu',REFUNDED:'Remboursé',CASHED_OUT:'Règlement particulier'};
       importedCoupons.forEach(c=>{
         const card=node('article','imported-card'),top=node('div','imported-meta');
-        top.append(node('h3','',c.bookmaker||'Coupon importé'),node('span','badge '+({PENDING:'pending',WON:'won',LOST:'lost'}[c.status]||''),statusesLabel[c.status]||c.status));
+        top.append(node('h3','',c.bookmaker||'Coupon importé'),node('span','badge '+({PENDING:'pending',WON:'won',LOST:'lost',REFUNDED:'pending',CASHED_OUT:'pending'}[c.status]||''),statusesLabel[c.status]||c.status));
         card.append(top,node('p','',`${c.date} · ${c.selections.length} sélection(s) · ${c.currency}`),
           node('p','',`Mise : ${importedMoney(c.stake,c.currency)} · Cote totale : ${Number(c.total_odds)}`),
           node('p','',`Retour potentiel affiché : ${importedMoney(c.potential_return,c.currency)}`));
@@ -3782,8 +3915,11 @@ footer{color:#5f718c!important;font-size:10px!important}
           ? 'Inclus dans les indicateurs EUR.' : 'Autre devise : exclu des indicateurs EUR, sans conversion.'));
         const linkedId=c.coupon_data?.metricLinkedBetId;
         if(linkedId && state.bets.some(b=>String(b.id)===linkedId))card.append(node('p','selection-hint','Lié à un pari manuel : seule cette version importée est comptée.'));
+        if(c.status!=='PENDING')card.append(node('p','settlement-pill',c.settled_return==null
+          ? 'Ancien règlement : retour non confirmé, calcul historique provisoire.'
+          : `Argent crédité : ${importedMoney(c.settled_return,c.currency)} · règlement : ${c.settled_at||'date non renseignée'}`));
         const details=node('details');details.append(node('summary','selection-hint','Voir les sélections et les notes'));
-        details.append(node('pre','',c.selections.map((s,i)=>[`${i+1}. ${s.event}`,s.competition,s.eventDate,s.eventTime,s.market,s.scope,s.conditions,s.odds==null?'':`Cote : ${s.odds}`].filter(Boolean).join('\n')).join('\n\n')));
+        details.append(node('pre','',c.selections.map((s,i)=>[`${i+1}. ${s.event}`,s.competition,s.eventDate,s.eventTime,s.market,s.scope,s.conditions,s.odds==null?'':`Cote : ${s.odds}`,`Résultat : ${LEG_LABELS[s.result]||'Non renseigné'}`,s.failureReason?`Constat : ${s.failureReason}`:''].filter(Boolean).join('\n')).join('\n\n')));
         if(c.notes)details.append(node('pre','',c.notes));
         if(c.reference)details.append(node('p','',`Référence : ${c.reference}`));
         if(c.source_url){try{const a=node('a','selection-hint','Lien de référence — contenu non vérifié');a.href=cleanedSourceUrl(c.source_url);a.target='_blank';a.rel='noopener noreferrer';details.append(a);}catch{}}
@@ -3807,6 +3943,9 @@ footer{color:#5f718c!important;font-size:10px!important}
     // ÉVÉNEMENTS ET ACCESSIBILITÉ
 
     function setup() {
+      $('betStatus').addEventListener('change',syncSettlementFields);
+      $('betStake').addEventListener('input',updateSettlementHint);
+      syncSettlementFields();
       resetImportReview();
       $('openCouponImport').addEventListener('click',openCouponImporter);
       $('couponImportForm').addEventListener('submit',extractCoupon);
