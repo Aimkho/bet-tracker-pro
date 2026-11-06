@@ -677,6 +677,8 @@ footer{color:#5f718c!important;font-size:10px!important}
 
   </div>
 
+  <p id="accountingStatus" class="selection-hint" role="status" aria-live="polite"></p>
+
   <!-- GRAPHIQUE -->
   <div class="panel p-4 sm:p-5">
     <h2 class="text-sm font-bold mb-4">
@@ -699,7 +701,7 @@ footer{color:#5f718c!important;font-size:10px!important}
     </p>
 
     <p class="text-[11px] text-slate-500 mt-3">
-      Reconstitution des paris réglés selon leur date renseignée.
+      Paris manuels et coupons EUR réglés, classés selon la date de pari renseignée. Ce n’est pas un historique des dates de règlement.
     </p>
   </div>
 
@@ -738,7 +740,7 @@ footer{color:#5f718c!important;font-size:10px!important}
 
 <section class="panel p-4 sm:p-5 space-y-4" aria-labelledby="importedCouponsTitle">
  <div class="selection-heading"><h2 id="importedCouponsTitle">Coupons importés</h2><button id="reloadImportedCoupons" type="button" class="btn secondary">Actualiser</button></div>
- <p class="selection-hint">Montants conservés dans la devise du coupon. Ces coupons sont exclus du capital, du graphique et des indicateurs ci-dessus. Aucun pari n’est placé chez le bookmaker.</p>
+ <p class="selection-hint">Les coupons en EUR participent aux indicateurs et au graphique. Les autres devises restent à part, sans conversion. Un combiné compte comme un seul pari.</p>
  <div id="importedCouponsList" class="imported-list" aria-live="polite"></div>
 </section>
 
@@ -1049,7 +1051,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       <form id="betForm" class="space-y-4">
         <input id="betId" type="hidden">
 <div id="importReviewPanel" class="import-review hidden space-y-4">
- <p class="selection-hint">Coupon importé : relisez chaque sélection. Il sera enregistré séparément et ne modifiera pas le capital actuel.</p>
+ <p class="selection-hint">Coupon importé : relisez chaque sélection. Un coupon en EUR est inclus dans les indicateurs. Reliez-le ci-dessous à un ancien pari manuel si c’est le même ticket.</p>
  <div class="import-two">
   <div><label class="label" for="importBookmaker">Bookmaker</label><input id="importBookmaker" class="field" maxlength="150"></div>
   <div><label class="label" for="importReference">Référence — facultatif</label><input id="importReference" class="field" maxlength="250"></div>
@@ -1057,6 +1059,7 @@ footer{color:#5f718c!important;font-size:10px!important}
   <div><label class="label" for="importPotentialReturn">Retour potentiel affiché — facultatif</label><input id="importPotentialReturn" class="field" type="number" min="0" step="0.01"></div>
  </div>
  <div><label class="label" for="importSourceUrl">Lien de référence — non téléchargé</label><input id="importSourceUrl" class="field" type="url" maxlength="2500"></div>
+ <div><label class="label" for="importLinkedManualBet">Doublon : ce coupon remplace-t-il un pari manuel déjà saisi ?</label><select id="importLinkedManualBet" class="field"></select><p class="selection-hint">Si vous choisissez un ancien pari, il reste dans le journal mais seule la version importée en EUR participe aux indicateurs. Sans lien, les deux sont comptés comme des paris distincts.</p></div>
  <div id="importExtractedFacts" class="selection-hint"></div>
  <ul id="importWarnings" class="import-warnings"></ul>
  <label class="import-check"><input id="importPlacementConfirmed" type="checkbox"><span>Je confirme que ce coupon correspond à un pari réellement validé, pas seulement à un coupon à copier.</span></label>
@@ -1089,7 +1092,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
           <div>
             <label class="label" for="betStake">
-              Mise ($)
+              Mise (€)
             </label>
 
             <input
@@ -1205,7 +1208,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       <form id="configForm" class="space-y-4">
         <div>
           <label class="label" for="configInitialCapital">
-            Capital initial ($)
+            Capital initial (€)
           </label>
 
           <input
@@ -1458,7 +1461,10 @@ footer{color:#5f718c!important;font-size:10px!important}
     }
 
     function money(value) {
-      return '$' + Number(value).toFixed(2);
+      const amount = Number(value);
+      return Number.isFinite(amount)
+        ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
+        : '—';
     }
 
     function parisDate() {
@@ -1507,17 +1513,11 @@ footer{color:#5f718c!important;font-size:10px!important}
 
     function profit(bet) {
       if (bet.status === 'WON') {
-        return bet.stake * (bet.odds - 1);
+        const gross = bet.returnAmount == null ? bet.stake * bet.odds : bet.returnAmount;
+        return centsRound(gross - bet.stake);
       }
-
-      if (bet.status === 'LOST') {
-        return -bet.stake;
-      }
-
-      return 0;
+      return bet.status === 'LOST' ? -bet.stake : 0;
     }
-
-    // ALERTES
 
     function showAlert(message, type = 'INFO') {
       clearTimeout(alertTimer);
@@ -1983,6 +1983,8 @@ footer{color:#5f718c!important;font-size:10px!important}
       if (!db || !userId) return false;
 
       const version = ++loadVersion;
+      importedLoadVersion++;
+      importedAccountingLoaded=false;importedAccountingLoading=false;
 
       state.loading = true;
       state.ready = false;
@@ -2458,94 +2460,105 @@ footer{color:#5f718c!important;font-size:10px!important}
       }
     }
 
+
+    // Les anciens montants sont en EUR, confirmé par l'utilisateur : aucun taux de change.
+    function centsRound(value) { return Math.round((value + Number.EPSILON) * 100) / 100; }
+    function accountingRows(manualBets, coupons) {
+      const rows = [], replacedManualIds = new Set(), usedLinks = new Set();
+      const ownManualIds = new Set(manualBets.map(b => String(b.id)));
+      let foreignCount = 0, linkedCount = 0;
+      const validate = (b, label) => {
+        if (!b || !validDate(b.date) || !statuses.includes(b.status) ||
+            !Number.isFinite(b.stake) || b.stake <= 0 ||
+            !Number.isFinite(b.odds) || b.odds < 1 || !Number.isFinite(b.stake * b.odds)) {
+          throw new Error(`Données financières invalides : ${label}. Vérifiez ce pari.`);
+        }
+      };
+      for (const c of coupons) {
+        if (typeof c.currency !== 'string' || !/^[A-Z]{3}$/.test(c.currency.trim().toUpperCase())) {
+          throw new Error('Devise manquante ou invalide sur un coupon importé.');
+        }
+        if (c.currency.trim().toUpperCase() !== 'EUR') { foreignCount++; continue; }
+        const b = {
+          id: `import:${c.id}`, source: 'import', date:c.date,
+          stake: c.stake == null ? NaN : Number(c.stake),
+          odds: c.total_odds == null ? NaN : Number(c.total_odds), status:c.status,
+          returnAmount: c.potential_return == null ? null : Number(c.potential_return)
+        };
+        validate(b, `coupon ${c.id}`);
+        if (b.returnAmount !== null && (!Number.isFinite(b.returnAmount) || b.returnAmount < 0)) {
+          throw new Error(`Retour invalide pour le coupon ${c.id}.`);
+        }
+        const linkedId = typeof c.coupon_data?.metricLinkedBetId === 'string' ? c.coupon_data.metricLinkedBetId : '';
+        if (linkedId && ownManualIds.has(linkedId)) {
+          if (usedLinks.has(linkedId)) throw new Error('Deux coupons remplacent le même pari manuel. Corrigez leurs liens de doublon.');
+          usedLinks.add(linkedId); replacedManualIds.add(linkedId); linkedCount++;
+        }
+        rows.push(b);
+      }
+      for (const m of manualBets) {
+        if (replacedManualIds.has(String(m.id))) continue;
+        const b={...m,id:`manual:${m.id}`,source:'manual',stake:Number(m.stake),odds:Number(m.odds),returnAmount:null};
+        if (m.stake == null || m.odds == null) throw new Error('Montants absents dans un pari manuel.');
+        validate(b, `pari ${m.id}`); rows.push(b);
+      }
+      return { rows, foreignCount, linkedCount, manualCount:rows.filter(b=>b.source==='manual').length,
+        importedCount:rows.filter(b=>b.source==='import').length };
+    }
+    function accountingSnapshot() {
+      if (!state.ready || !state.profile) return {ready:false,message:state.loading?'Chargement des paris…':'Connectez-vous et chargez vos données.'};
+      if (importedAccountingLoading || !importedAccountingLoaded) return {ready:false,message:'Chargement des coupons importés : indicateurs en attente.'};
+      if (importedLoadError) return {ready:false,message:'Indicateurs indisponibles : les coupons importés n’ont pas pu être chargés. Actualisez la section des coupons.'};
+      try { return {ready:true,...accountingRows(state.bets,importedCoupons)}; }
+      catch(e) { return {ready:false,message:e.message}; }
+    }
+    function financialTotals(rows,initialCapital) {
+      let totalProfit=0,pending=0,settledStakes=0,settled=0,won=0;
+      for (const b of rows) {
+        totalProfit += profit(b);
+        if (b.status==='PENDING') pending+=b.stake;
+        else {settled++;settledStakes+=b.stake;if(b.status==='WON')won++;}
+      }
+      totalProfit=centsRound(totalProfit);pending=centsRound(pending);
+      return {totalProfit,pending,settledStakes,settled,won,
+        capital:centsRound(initialCapital+totalProfit),
+        available:centsRound(initialCapital+totalProfit-pending),
+        yieldValue:settledStakes?totalProfit/settledStakes*100:0,
+        winRate:settled?won/settled*100:0};
+    }
+    function fillManualDuplicateChoices(selectedId='') {
+      const select=$('importLinkedManualBet'); select.replaceChildren();
+      const none=node('option','','Aucun — ce coupon est un pari distinct');none.value='';select.append(none);
+      state.bets.forEach(b=>{
+        const option=node('option','',`${b.date} · ${b.match} · ${money(b.stake)} · @${b.odds}`);
+        option.value=String(b.id);select.append(option);
+      });
+      select.value=state.bets.some(b=>String(b.id)===selectedId)?selectedId:'';
+    }
+
     // INDICATEURS
 
     function renderMetrics() {
-      if (!state.ready) {
-        [
-          'metricCapital',
-          'metricProfit',
-          'metricYield',
-          'metricWinRate'
-        ].forEach(id => {
-          $(id).textContent = '—';
-        });
-
-        $('metricInitialCapital').textContent =
-          'Départ : —';
-
-        $('metricAvailableCapital').textContent =
-          'Disponible : —';
-
-        return;
+      const snapshot=accountingSnapshot();
+      const note=$('accountingStatus');
+      if (!snapshot.ready) {
+        ['metricCapital','metricProfit','metricYield','metricWinRate'].forEach(id=>{$(id).textContent='—';});
+        $('metricInitialCapital').textContent='Départ : —';
+        $('metricAvailableCapital').textContent='Disponible : —';
+        note.textContent=snapshot.message;return;
       }
-
-      let totalProfit = 0;
-      let pending = 0;
-      let settledStakes = 0;
-      let settled = 0;
-      let won = 0;
-
-      state.bets.forEach(bet => {
-        totalProfit += profit(bet);
-
-        if (bet.status === 'PENDING') {
-          pending += bet.stake;
-        } else {
-          settled++;
-          settledStakes += bet.stake;
-
-          if (bet.status === 'WON') {
-            won++;
-          }
-        }
-      });
-
-      const capital =
-        state.profile.initialCapital + totalProfit;
-
-      const yieldValue =
-        settledStakes > 0
-          ? totalProfit / settledStakes * 100
-          : 0;
-
-      $('metricCapital').textContent =
-        money(capital);
-
-      $('metricInitialCapital').textContent =
-        'Départ : ' +
-        money(state.profile.initialCapital);
-
-      $('metricAvailableCapital').textContent =
-        'Disponible : ' +
-        money(capital - pending);
-
-      $('metricProfit').textContent =
-        (totalProfit >= 0 ? '+' : '-') +
-        money(Math.abs(totalProfit));
-
-      $('metricProfit').className =
-        'metric mt-2 break-any ' +
-        (
-          totalProfit >= 0
-            ? 'text-violet-400'
-            : 'text-rose-400'
-        );
-
-      $('metricYield').textContent =
-        (yieldValue >= 0 ? '+' : '') +
-        yieldValue.toFixed(1) +
-        '%';
-
-      $('metricWinRate').textContent =
-        (
-          settled > 0
-            ? won / settled * 100
-            : 0
-        ).toFixed(1) + '%';
+      const totals=financialTotals(snapshot.rows,state.profile.initialCapital);
+      $('metricCapital').textContent=money(totals.capital);
+      $('metricInitialCapital').textContent='Départ : '+money(state.profile.initialCapital);
+      $('metricAvailableCapital').textContent='Disponible : '+money(totals.available);
+      $('metricProfit').textContent=(totals.totalProfit>=0?'+':'−')+money(Math.abs(totals.totalProfit));
+      $('metricProfit').className='metric mt-2 break-any '+(totals.totalProfit>=0?'text-violet-400':'text-rose-400');
+      $('metricYield').textContent=(totals.yieldValue>=0?'+':'')+totals.yieldValue.toFixed(1)+'%';
+      $('metricWinRate').textContent=totals.winRate.toFixed(1)+'%';
+      note.textContent=`EUR · ${snapshot.manualCount} pari(s) manuel(s) + ${snapshot.importedCount} coupon(s) importé(s) comptés.`+
+        (snapshot.linkedCount?` ${snapshot.linkedCount} doublon(s) relié(s) : seule la version importée est comptée.`:'')+
+        (snapshot.foreignCount?` ${snapshot.foreignCount} coupon(s) d’autres devises exclus, sans conversion.`:'');
     }
-
-    // TABLEAU ET FICHES MOBILES
 
     function cell(label, content, classes = '') {
       const td = node('td', classes);
@@ -2620,6 +2633,10 @@ footer{color:#5f718c!important;font-size:10px!important}
             bet.sport || ''
           )
         );
+
+        if (importedCoupons.some(c=>c.currency==='EUR' && c.coupon_data?.metricLinkedBetId===String(bet.id))) {
+          description.append(node('p','selection-hint','Doublon relié : le coupon importé remplace ce pari dans les indicateurs.'));
+        }
 
         if (bet.notes) {
           const details = node(
@@ -2714,14 +2731,15 @@ footer{color:#5f718c!important;font-size:10px!important}
 
       $('chartError').classList.add('hidden');
 
-      if (!state.ready) return;
+      const snapshot = accountingSnapshot();
+      if (!snapshot.ready) return;
 
       let capital = state.profile.initialCapital;
 
       const labels = ['Départ'];
       const values = [capital];
 
-      [...state.bets]
+      [...snapshot.rows]
         .filter(bet => bet.status !== 'PENDING')
         .sort(
           (a, b) =>
@@ -2729,7 +2747,7 @@ footer{color:#5f718c!important;font-size:10px!important}
             a.id.localeCompare(b.id)
         )
         .forEach(bet => {
-          capital += profit(bet);
+          capital = centsRound(capital + profit(bet));
           labels.push(bet.date);
           values.push(capital);
         });
@@ -2743,7 +2761,7 @@ footer{color:#5f718c!important;font-size:10px!important}
               labels,
               datasets: [
                 {
-                  label: 'Capital ($)',
+                  label: 'Capital (€)',
                   data: values,
                   borderColor: '#791CF8',
                   backgroundColor:
@@ -3502,6 +3520,8 @@ footer{color:#5f718c!important;font-size:10px!important}
     let importedCoupons = [];
     let importedLoadVersion = 0;
     let importedLoadError = '';
+    let importedAccountingLoaded = false;
+    let importedAccountingLoading = false;
 
     function importMessage(message, error = false) {
       $('couponImportMessage').textContent = message;
@@ -3515,12 +3535,13 @@ footer{color:#5f718c!important;font-size:10px!important}
         i.required = false; i.disabled = true;
         if (i.type === 'checkbox') i.checked = false; else i.value = '';
       });
-      document.querySelector('label[for="betStake"]').textContent = 'Mise ($)';
+      document.querySelector('label[for="betStake"]').textContent = 'Mise (€)';
     }
     function resetCouponImportSession() {
       couponImportVersion++; importedLoadVersion++;
       couponImportController?.abort(); couponImportController = null;
       importedCoupons = []; importedLoadError = '';
+      importedAccountingLoaded=false;importedAccountingLoading=false;
       couponPreviewUrls.forEach(URL.revokeObjectURL); couponPreviewUrls = [];
       $('couponImportForm').reset(); $('couponImagePreviews').replaceChildren();
       $('couponExtractButton').disabled = false;
@@ -3654,6 +3675,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       $('betSubmitBtn').textContent = existing ? 'Enregistrer les modifications' : 'Confirmer l’import dans le journal';
       $('aiBetNotice').textContent = 'Aucun résultat final n’est déduit d’un score en cours. Choisissez vous-même la date de validation et le statut.';
       $('aiBetNotice').classList.remove('hidden');
+      fillManualDuplicateChoices(existing?.coupon_data?.metricLinkedBetId || '');
       updateImportedCurrencyLabel();
       openModal('betModal','importBookmaker');
     }
@@ -3666,6 +3688,7 @@ footer{color:#5f718c!important;font-size:10px!important}
       if (amount === null || amount === undefined || amount === '') return '—';
       const n = Number(amount);
       if (!Number.isFinite(n)) return '—';
+      if(currency==='EUR')return money(n);
       return n.toLocaleString(navigator.language || 'fr-FR', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' ' + currency;
     }
     function cleanedSourceUrl(value) {
@@ -3697,13 +3720,19 @@ footer{color:#5f718c!important;font-size:10px!important}
           potential!==null && (!Number.isFinite(potential)||potential<0)) { showAlert('Vérifiez la devise, la date, le statut, le type de pari et les montants.','ERROR'); return; }
       let sourceUrl;
       try { sourceUrl=cleanedSourceUrl($('importSourceUrl').value.trim()); } catch(e){showAlert(e.message,'ERROR');return;}
+      const linkedManualId=$('importLinkedManualBet').value;
+      if(linkedManualId && currency!=='EUR'){showAlert('Un coupon d’une autre devise ne peut pas remplacer un pari manuel en EUR.','ERROR');return;}
+      if(linkedManualId && !state.bets.some(b=>String(b.id)===linkedManualId)){showAlert('Le pari manuel choisi est introuvable. Actualisez vos données.','ERROR');return;}
+      if(linkedManualId && importedCoupons.some(c=>c.id!==importedEditingId && c.currency==='EUR' && c.coupon_data?.metricLinkedBetId===linkedManualId)){
+        showAlert('Ce pari manuel est déjà relié à un autre coupon. Corrigez ce lien avant de continuer.','ERROR');return;
+      }
       const uid=state.user.id, editingId=importedEditingId;
       const payload={
         user_id:uid, date:$('betDate').value, sport:$('betSport').value,
         bookmaker:$('importBookmaker').value.trim()||null, reference:$('importReference').value.trim()||null,
         source_url:sourceUrl, currency,stake,total_odds:odds,potential_return:potential,
         status:$('betStatus').value,selections:collectSelections(),notes:$('betNotes').value.trim(),
-        coupon_data:{...importedDraft, placementConfirmedByUser:true, reviewedAt:new Date().toISOString()}
+        coupon_data:{...importedDraft, metricLinkedBetId:linkedManualId || null, placementConfirmedByUser:true, reviewedAt:new Date().toISOString()}
       };
       // L'extraction d'origine est conservée à titre de provenance, pas comme état validé.
       mutationBusy=true; $('betSubmitBtn').disabled=true; renderAuth();
@@ -3715,13 +3744,15 @@ footer{color:#5f718c!important;font-size:10px!important}
           : db.from('imported_coupons').insert(payload);
         const {error}=await query.select('id').single();
         if(error){if(error.code==='23505')throw new Error('Ce coupon semble déjà présent dans votre journal. Aucun doublon ajouté.');throw error;}
-        if(state.user?.id===uid){closeModal('betModal');resetImportReview();await refreshImportedCoupons();showAlert('Coupon enregistré dans la section « Coupons importés », sans modifier le capital.','SUCCESS');}
+        if(state.user?.id===uid){closeModal('betModal');resetImportReview();await refreshImportedCoupons();showAlert('Coupon enregistré. Les indicateurs EUR ont été actualisés si leur chargement a réussi.','SUCCESS');}
       } catch(e){showAlert('Import non enregistré : '+e.message,'ERROR');}
       finally {mutationBusy=false;$('betSubmitBtn').disabled=false;renderAuth();}
     }
     async function refreshImportedCoupons() {
       const uid=state.user?.id;if(!uid||!db)return;
       const version=++importedLoadVersion;importedLoadError='';
+      importedAccountingLoading=true;importedAccountingLoaded=false;
+      renderMetrics();renderChart();
       $('reloadImportedCoupons').disabled=true;
       try {
         const rows=[];
@@ -3733,7 +3764,7 @@ footer{color:#5f718c!important;font-size:10px!important}
         }
         if(version===importedLoadVersion&&state.user?.id===uid)importedCoupons=rows;
       } catch(e){if(version===importedLoadVersion&&state.user?.id===uid){importedCoupons=[];importedLoadError='Coupons importés indisponibles. Vérifiez que le script SQL d’installation a été exécuté. '+e.message;}}
-      finally {if(version===importedLoadVersion){$('reloadImportedCoupons').disabled=false;renderImportedCoupons();}}
+      finally {if(version===importedLoadVersion){importedAccountingLoading=false;importedAccountingLoaded=true;$('reloadImportedCoupons').disabled=false;renderImportedCoupons();renderBets();renderMetrics();renderChart();}}
     }
     function renderImportedCoupons() {
       const list=$('importedCouponsList');list.replaceChildren();
@@ -3747,6 +3778,10 @@ footer{color:#5f718c!important;font-size:10px!important}
         card.append(top,node('p','',`${c.date} · ${c.selections.length} sélection(s) · ${c.currency}`),
           node('p','',`Mise : ${importedMoney(c.stake,c.currency)} · Cote totale : ${Number(c.total_odds)}`),
           node('p','',`Retour potentiel affiché : ${importedMoney(c.potential_return,c.currency)}`));
+        card.append(node('p','selection-hint',c.currency==='EUR'
+          ? 'Inclus dans les indicateurs EUR.' : 'Autre devise : exclu des indicateurs EUR, sans conversion.'));
+        const linkedId=c.coupon_data?.metricLinkedBetId;
+        if(linkedId && state.bets.some(b=>String(b.id)===linkedId))card.append(node('p','selection-hint','Lié à un pari manuel : seule cette version importée est comptée.'));
         const details=node('details');details.append(node('summary','selection-hint','Voir les sélections et les notes'));
         details.append(node('pre','',c.selections.map((s,i)=>[`${i+1}. ${s.event}`,s.competition,s.eventDate,s.eventTime,s.market,s.scope,s.conditions,s.odds==null?'':`Cote : ${s.odds}`].filter(Boolean).join('\n')).join('\n\n')));
         if(c.notes)details.append(node('pre','',c.notes));
